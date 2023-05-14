@@ -5,6 +5,8 @@ const deshboardRouter = require("./routes/deshboard");
 const loginRoute = require("./routes/login");
 const customerRoute = require("./routes/customers");
 const notesRouter = require("./routes/notes");
+const productRouter = require("./routes/products");
+const supplierRouter = require("./routes/supplier");
 require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5000;
@@ -16,10 +18,12 @@ app.use(express.static("public"));
 
 //routes
 app.use("/", deshboardRouter);
-app.use("/user", userRouter);
-app.use("/login", loginRoute);
-app.use("/customer", customerRoute);
-app.use("/notes", notesRouter);
+app.use("/user", userRouter); //done
+app.use("/login", loginRoute); //done
+app.use("/customer", customerRoute); //done
+app.use("/notes", notesRouter); //done
+app.use("/product", productRouter); //done
+app.use("/supplier", supplierRouter);
 
 //error handler;
 app.use((err, req, res, next) => {
