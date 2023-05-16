@@ -7,6 +7,7 @@ const customerRoute = require("./routes/customers");
 const notesRouter = require("./routes/notes");
 const productRouter = require("./routes/products");
 const supplierRouter = require("./routes/supplier");
+const purchaseRouter = require("./routes/purchase");
 require("dotenv").config();
 const app = express();
 const port = process.env.PORT || 5000;
@@ -23,7 +24,8 @@ app.use("/login", loginRoute); //done
 app.use("/customer", customerRoute); //done
 app.use("/notes", notesRouter); //done
 app.use("/product", productRouter); //done
-app.use("/supplier", supplierRouter);
+app.use("/supplier", supplierRouter); //done
+app.use("/purchase", purchaseRouter); //done
 
 //error handler;
 app.use((err, req, res, next) => {

@@ -4,7 +4,6 @@ const { deleteImage } = require("./common");
 async function postProduct(req, res, next) {
   try {
     if (req.file) req.body.profile = req.file.filename;
-    req.body.stock = req.body.purchase;
     const sql = "INSERT INTO products SET ";
     const result = await postDocument(sql, req.body);
     if (!result.insertId) throw { message: "Opps! unable to add" };
@@ -16,7 +15,10 @@ async function postProduct(req, res, next) {
 
 async function getProducts(req, res, next) {
   try {
-    const sql = "SELECT * FROM products";
+    let sql;
+    if (req.query.opt) {
+      sql = `SELECT ${req.query.opt} FROM products`;
+    } else sql = "SELECT * FROM products";
     const result = await queryDocument(sql);
     res.send(result);
   } catch (error) {
@@ -30,17 +32,10 @@ async function updateProduct(req, res, next) {
     if (req.file) req.body.profile = req.file.filename;
     const existedImg = req.body.existedImg;
     delete req.body.existedImg;
-    const purchase = req.body.purchase;
-    delete req.body.purchase;
     const sql = "UPDATE products SET ";
     const condition = ` WHERE id='${req.query.id}'`;
-    const documentUp = await postDocument(sql, req.body, condition);
-    let purchaseUp;
-    if (purchase) {
-      const sql = `UPDATE products SET purchase = purchase + ${purchase}, stock = stock + ${purchase} WHERE id = '${req.query.id}'`;
-      purchaseUp = await queryDocument(sql);
-    }
-    if (!documentUp.affectedRows && !purchaseUp?.affectedRows) {
+    const result = await postDocument(sql, req.body, condition);
+    if (!result.affectedRows) {
       throw { message: "Opps! unable to update" };
     }
     if (existedImg) deleteImage(existedImg);
