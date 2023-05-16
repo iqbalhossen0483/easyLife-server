@@ -16,9 +16,18 @@ async function postSuppier(req, res, next) {
 
 async function getSupplier(req, res, next) {
   try {
-    const sql = "SELECT * FROM supplier";
-    const result = await queryDocument(sql);
-    res.send(result);
+    if (req.query.id) {
+      const sql = `SELECT * FROM supplier WHERE id = '${req.query.id}'`;
+      const supplier = await queryDocument(sql);
+      const purchaseSql = `SELECT id, product_name as name, purchased FROM purchase_products WHERE supplierId = '${req.query.id}'`;
+      const purchasedata = await queryDocument(purchaseSql);
+      supplier[0].products = purchasedata;
+      res.send(supplier[0]);
+    } else {
+      const sql = "SELECT * FROM supplier ";
+      const result = await queryDocument(sql);
+      res.send(result);
+    }
   } catch (error) {
     next(error);
   }
