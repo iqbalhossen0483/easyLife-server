@@ -3,8 +3,8 @@ const multer = require("../middleWares/multer");
 const {
   postCustomer,
   getCustomers,
-  deleteCustomer,
   updateCustomer,
+  deleteCustomer,
 } = require("../services/customers");
 const customerRoute = express.Router();
 
@@ -12,7 +12,7 @@ customerRoute
   .route("/")
   .get(getCustomers)
   .post(multer.single("profile"), postCustomer)
-  .delete(deleteCustomer)
-  .put(multer.single("profile"), updateCustomer);
+  .put(multer.single("profile"), updateCustomer)
+  .delete(deleteCustomer);
 
 module.exports = customerRoute;

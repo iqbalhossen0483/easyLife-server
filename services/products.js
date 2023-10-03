@@ -15,10 +15,11 @@ async function postProduct(req, res, next) {
 
 async function getProducts(req, res, next) {
   try {
-    let sql;
-    if (req.query.opt) {
-      sql = `SELECT ${req.query.opt} FROM products`;
-    } else sql = "SELECT * FROM products";
+    let sql = "SELECT * FROM products";
+    if (req.query.opt) sql = `SELECT ${req.query.opt} FROM products`;
+    if (req.query.search) {
+      sql += ` WHERE name LIKE "%${req.query.search}%"`;
+    }
     const result = await queryDocument(sql);
     res.send(result);
   } catch (error) {

@@ -6,6 +6,11 @@ async function login(req, res, next) {
     const sql = `SELECT * FROM users WHERE phone = '${req.body.phone}'`;
     const user = await queryDocument(sql);
     if (!user.length) throw { message: "No user found" };
+    else {
+      const sqlTc = `SELECT * FROM target_commision WHERE user_id = ${user[0].id}`;
+      const tc = await queryDocument(sqlTc);
+      user[0].targets = tc;
+    }
     if (user[0].password !== req.body.password) {
       throw { message: "Wrong password" };
     }
@@ -19,16 +24,18 @@ async function login(req, res, next) {
 
 async function checkIsLogin(req, res, next) {
   try {
-    let user;
-    user = jwt.verify(req.query.token, process.env.tokenSecret);
-    if (req.query.updateUser) {
-      const sql = `SELECT * FROM users WHERE phone = '${user.phone}'`;
-      const result = await queryDocument(sql);
-      user = result[0];
+    const user = jwt.verify(req.query.token, process.env.tokenSecret);
+    const sql = `SELECT * FROM users WHERE phone = '${user.phone}'`;
+    const result = await queryDocument(sql);
+    if (result.length) {
+      const sqlTc = `SELECT * FROM target_commision WHERE user_id = ${result[0].id}`;
+      const tc = await queryDocument(sqlTc);
+      result[0].targets = tc;
     }
-    delete user.iat;
-    res.send(user);
+    res.send(result[0]);
   } catch (error) {
+    console.log(error);
+    error.message = "Login failed";
     next(error);
   }
 }

@@ -19,7 +19,7 @@ async function getSupplier(req, res, next) {
     if (req.query.id) {
       const sql = `SELECT * FROM supplier WHERE id = '${req.query.id}'`;
       const supplier = await queryDocument(sql);
-      const purchaseSql = `SELECT id, product_name as name, purchased FROM purchase_products WHERE supplierId = '${req.query.id}'`;
+      const purchaseSql = `SELECT pp.id, p.name, pp.purchased FROM purchase_products pp INNER JOIN products p ON p.id = pp.productId WHERE supplierId = '${req.query.id}'`;
       const purchasedata = await queryDocument(purchaseSql);
       supplier[0].products = purchasedata;
       res.send(supplier[0]);

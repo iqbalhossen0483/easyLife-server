@@ -21,21 +21,40 @@ async function postCustomer(req, res, next) {
 async function getCustomers(req, res, next) {
   try {
     let sql = "SELECT * FROM customers ";
-    if (req.query.id) sql += `WHERE id= '${req.query.id}'`;
-    const customers = await queryDocument(sql);
-    res.send(customers);
-  } catch (error) {
-    next(error);
-  }
-}
+    if (req.query.opt) sql = `SELECT ${req.query.opt} FROM customers`;
+    if (req.query.id) {
+      const allSql = `SELECT id FROM orders WHERE shopId = '${req.query.id}'`;
+      const page = parseInt(req.query.page || 0);
+      const limit = (page + 1) * 51;
+      const allOrder = await queryDocument(allSql);
 
-async function deleteCustomer(req, res, next) {
-  try {
-    const sql = `DELETE FROM customers WHERE id = '${req.query.id}'`;
-    const result = await queryDocument(sql);
-    if (!result.affectedRows) throw { message: "Opps! Unable to delete" };
-    if (req.query.profile) deleteImage(req.query.profile);
-    res.send({ message: "Deleted successfylly" });
+      sql += `WHERE id= '${req.query.id}'`;
+      const customers = await queryDocument(sql);
+
+      const orderSql = `SELECT o.*,c.shopName, c.profile, c.address,c.phone FROM orders o INNER JOIN customers c ON c.id = o.shopId WHERE o.shopId = '${
+        req.query.id
+      }' ORDER BY o.date DESC LIMIT ${page * 50}, ${limit - 1}`;
+      const orders = await queryDocument(orderSql);
+
+      if (customers.length) customers[0].orders = orders;
+
+      res.send({ count: allOrder.length, data: customers[0] });
+    } else if (req.query.search) {
+      sql += ` WHERE shopName LIKE "%${req.query.search}%" OR machine_model LIKE "%${req.query.search}" OR machine_type LIKE "%${req.query.search}"`;
+      const customers = await queryDocument(sql);
+      res.send(customers);
+    } else {
+      const allSql = "SELECT id FROM customers";
+      const page = parseInt(req.query.page || 0);
+      const limit = (page + 1) * 51;
+      const allCustomer = await queryDocument(allSql);
+
+      const sql = `SELECT C.*, users.name as added_by_name FROM customers c INNER JOIN users ON users.id = c.added_by ORDER BY c.lastOrder DESC LIMIT ${
+        page * 50
+      }, ${limit - 1}`;
+      const customers = await queryDocument(sql);
+      res.send({ count: allCustomer.length, data: customers });
+    }
   } catch (error) {
     next(error);
   }
@@ -58,5 +77,27 @@ async function updateCustomer(req, res, next) {
     next(error);
   }
 }
+async function deleteCustomer(req, res, next) {
+  try {
+    const sql = `DELETE FROM customers WHERE id = '${req.query.id}'`;
+    const result = await queryDocument(sql);
+    if (!result.affectedRows) throw { message: "Unable to delete customer" };
 
-module.exports = { postCustomer, getCustomers, deleteCustomer, updateCustomer };
+    //delete the customer's orders;
+    const orderSql = `SELECT id FROM orders WHERE shopId = '${req.query.id}'`;
+    const orders = await queryDocument(orderSql);
+    for (const order of orders) {
+      const deleteOrderSql = `DELETE FROM orders WHERE id = '${order.id}'`;
+      const result = await queryDocument(deleteOrderSql);
+      if (!result.affectedRows) continue;
+      const deleteProductSql = `DELETE FROM orders_products WHERE orderId = '${order.id}'`;
+      await queryDocument(deleteProductSql);
+    }
+
+    res.send({ message: "Deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = { postCustomer, getCustomers, updateCustomer, deleteCustomer };
