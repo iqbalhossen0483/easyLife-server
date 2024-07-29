@@ -7,6 +7,7 @@ const {
   addExpenseReport,
   getExpenseReports,
   achieveExpense,
+  declineExpense
 } = require("../services/expense");
 
 const expenseRouter = express.Router();
@@ -18,5 +19,6 @@ expenseRouter.post("/type", addExpenseType);
 expenseRouter.put("/type", editexpenseType);
 expenseRouter.delete("/type", deleteexpenseType);
 expenseRouter.get("/type", getexpenseTypes);
+expenseRouter.delete("/", declineExpense);
 
 module.exports = expenseRouter;

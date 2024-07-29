@@ -5,9 +5,10 @@ const {
   deleteUser,
   putUser,
   addATargetForUser,
-  updateTarget,
   balance_transfer,
   receive_balance,
+  decline_balance_transfer,
+  recentActivity,
 } = require("../services/user");
 const multer = require("../middleWares/multer");
 
@@ -21,8 +22,9 @@ userRouter
   .put(multer.single("profile"), putUser);
 
 userRouter.post("/target", addATargetForUser);
-userRouter.put("/target", updateTarget);
 userRouter.post("/balance_transfer", balance_transfer);
 userRouter.post("/receive_balance", receive_balance);
+userRouter.delete("/decline_balance", decline_balance_transfer);
+userRouter.get("/recentactivity", recentActivity);
 
 module.exports = userRouter;

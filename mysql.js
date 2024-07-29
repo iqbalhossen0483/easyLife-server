@@ -1,26 +1,15 @@
 const mysql = require("mysql2/promise");
 
-// async function mySql() {
-//   const db = await mysql.createConnection({
-//     host: "localhost",
-//     user: "diaryofmind_iqbal",
-//     database: "diaryofmind_iqbal",
-//     password: "rPg#];Bb+~Gn",
-//     connectionLimit: 10,
-//     waitForConnections: true,
-//   });
-//   return db;
-// }
 async function mySql() {
   const db = await mysql.createConnection({
     host: "localhost",
     user: "root",
-    database: "royalcafe",
+    database: "easy_life_controller",
     password: "",
     connectionLimit: 10,
     waitForConnections: true,
+    dateStrings: true,
   });
-
   return db;
 }
 

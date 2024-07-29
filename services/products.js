@@ -4,7 +4,7 @@ const { deleteImage } = require("./common");
 async function postProduct(req, res, next) {
   try {
     if (req.file) req.body.profile = req.file.filename;
-    const sql = "INSERT INTO products SET ";
+    const sql = `INSERT INTO ${req.query.db}.products SET `;
     const result = await postDocument(sql, req.body);
     if (!result.insertId) throw { message: "Opps! unable to add" };
     res.send({ message: "Addedd successfully" });
@@ -15,11 +15,14 @@ async function postProduct(req, res, next) {
 
 async function getProducts(req, res, next) {
   try {
-    let sql = "SELECT * FROM products";
-    if (req.query.opt) sql = `SELECT ${req.query.opt} FROM products`;
+    let sql = `SELECT ${req.query.opt ? req.query.opt : "*"} FROM ${
+      req.query.db
+    }.products `;
     if (req.query.search) {
       sql += ` WHERE name LIKE "%${req.query.search}%"`;
     }
+
+    sql += " ORDER BY products.sl ASC";
     const result = await queryDocument(sql);
     res.send(result);
   } catch (error) {
@@ -30,10 +33,11 @@ async function getProducts(req, res, next) {
 async function updateProduct(req, res, next) {
   try {
     delete req.body.id;
+    console.log(req.body);
     if (req.file) req.body.profile = req.file.filename;
     const existedImg = req.body.existedImg;
     delete req.body.existedImg;
-    const sql = "UPDATE products SET ";
+    const sql = `UPDATE ${req.query.db}.products SET `;
     const condition = ` WHERE id='${req.query.id}'`;
     const result = await postDocument(sql, req.body, condition);
     if (!result.affectedRows) {
@@ -48,7 +52,7 @@ async function updateProduct(req, res, next) {
 
 async function deleteProduct(req, res, next) {
   try {
-    const sql = `DELETE FROM products WHERE id = '${req.query.id}'`;
+    const sql = `DELETE FROM ${req.query.db}.products WHERE id = '${req.query.id}'`;
     const result = await queryDocument(sql);
     if (!result.affectedRows) throw { message: "Opps! Unable to delete" };
     if (req.query.profile) deleteImage(req.query.profile);
