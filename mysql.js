@@ -4,7 +4,7 @@ async function mySql() {
   const db = await mysql.createConnection({
     host: "localhost",
     user: "root",
-    database: "easy_life_controller",
+    database: "switchcafebd_controller",
     password: "",
     connectionLimit: 10,
     waitForConnections: true,

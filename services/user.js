@@ -68,8 +68,10 @@ async function putUser(req, res, next) {
     const condition = ` WHERE id='${req.body.id}'`;
     delete req.body.id;
     const result = await postDocument(query, req.body, condition);
-    if (!result.changedRows) throw { message: "Opps! Unable to update" };
     if (existedImg) deleteImage(existedImg);
+    if (!req.query.token) {
+      if (!result.changedRows) throw { message: "Opps! Unable to update" };
+    }
     res.send({ message: "Updated successfully" });
   } catch (error) {
     if (req.file) deleteImage(req.file.filename);
@@ -116,14 +118,14 @@ async function addATargetForUser(req, res, next) {
               const sql = `UPDATE ${req.query.db}.target_commision SET `;
               const opt = ` WHERE id = '${currtTarget[0].id}'`;
 
-              if (currtTarget[0].remainingAmnt <= 0) {
+              if (currtTarget[0].achiveAmnt >= currtTarget[0].targetedAmnt) {
                 status = "achieved";
                 const sql = `INSERT INTO ${req.query.db}.pending_commition SET `;
                 const payload = {
                   user_id: currtTarget[0].user_id,
                   target_commission_id: currtTarget[0].id,
                   commission:
-                    currtTarget[0].targetedAmount *
+                    currtTarget[0].targetedAmnt *
                     (currtTarget[0].commission / 100),
                 };
                 await postDocument(sql, payload);

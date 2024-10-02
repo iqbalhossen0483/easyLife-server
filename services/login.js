@@ -1,5 +1,6 @@
 const { queryDocument } = require("../mysql");
 const jwt = require("jsonwebtoken");
+const { cashObserver } = require("./common");
 
 async function login(req, res, next) {
   try {
@@ -36,7 +37,8 @@ async function login(req, res, next) {
     const sqlTc = `SELECT * FROM ${database.name}.target_commision WHERE user_id = ${user.id}`;
     const tc = await queryDocument(sqlTc);
     user.targets = tc;
-
+    req.query.db = database.name;
+    await cashObserver(req);
     res.send({ message: "Login successfull", token, data: { user, database } });
   } catch (error) {
     next(error);
@@ -73,6 +75,8 @@ async function checkIsLogin(req, res, next) {
     const currentCustomer = await queryDocument(currentCustomerSql);
     db[0].current_customer = currentCustomer.length - 1;
 
+    req.query.db = database;
+    await cashObserver(req);
     res.send({ user: user[0], database: db[0] });
   } catch (error) {
     error.message = "Login failed";

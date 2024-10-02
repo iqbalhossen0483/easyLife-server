@@ -7,6 +7,7 @@ async function postProduction(req, res, next) {
     const stock = req.body.stock;
     delete req.body.stock;
     delete req.body.list;
+
     //add production data;
     const productionSql = `INSERT INTO ${req.query.db}.production SET `;
     const productionres = await postDocument(productionSql, req.body);
@@ -95,7 +96,7 @@ async function getProduction(req, res, next) {
     const page = parseInt(req.query.page || 0);
     const sql = `SELECT pro.id, pro.production, pro.date, users.name as production_by, products.name as product_name FROM ${
       req.query.db
-    }.production pro INNER JOIN ${
+    }.production pro LEFT JOIN ${
       req.query.db
     }.users ON users.id = pro.production_by INNER JOIN ${
       req.query.db
@@ -103,6 +104,7 @@ async function getProduction(req, res, next) {
       page * 50
     },50`;
     const data = await queryDocument(sql);
+
     const allSql = `SELECT id FROM ${req.query.db}.production`;
     const allData = await queryDocument(allSql);
 

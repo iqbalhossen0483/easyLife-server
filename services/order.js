@@ -1,6 +1,7 @@
 const { postDocument, queryDocument } = require("../mysql");
 let database;
 
+//done;
 async function postOrder(req, res, next) {
   try {
     database = req.query.db;
@@ -12,6 +13,7 @@ async function postOrder(req, res, next) {
 
     for (const product of products) {
       delete product.name;
+      delete product.stock;
       product.orderId = insertId;
       const sql = `INSERT INTO ${database}.orders_products SET `;
       await postDocument(sql, product);
@@ -22,6 +24,7 @@ async function postOrder(req, res, next) {
   }
 }
 
+//done;
 async function getOrders(req, res, next) {
   try {
     database = req.query.db;
@@ -157,6 +160,7 @@ async function updateOrder(req, res, next) {
   }
 }
 
+//done;
 async function removeOrder(req, res, next) {
   try {
     database = req.query.db;
@@ -171,6 +175,7 @@ async function removeOrder(req, res, next) {
   }
 }
 
+//done;
 async function editOrder(req, res, next) {
   try {
     const products = req.body.products || [];
@@ -187,6 +192,7 @@ async function editOrder(req, res, next) {
       if (product.id) continue;
       product.orderId = req.query.id;
       delete product.name;
+      delete product.stock;
       const sql = `INSERT INTO ${database}.orders_products SET `;
       await postDocument(sql, product);
     }
@@ -240,14 +246,7 @@ async function completeOrder(req, res, next) {
     req.body.totalSale = shopData.totalSale;
 
     //update daily cash report;
-    await updateCashReport(
-      req,
-      "daily_cash_report",
-      req.body,
-      date,
-      "date",
-      prevSale
-    );
+    await updateCashReport(req, "daily_cash_report", req.body, date, prevSale);
 
     //update monthly cash report;
     await updateCashReport(
@@ -255,20 +254,18 @@ async function completeOrder(req, res, next) {
       "monthly_cash_report",
       req.body,
       date,
-      "month",
       prevSale
     );
 
     //update yearly cash report;
-    await updateCashReport(
-      req,
-      "yearly_cash_report",
-      req.body,
-      date,
-      "year",
-      prevSale
-    );
+    await updateCashReport(req, "yearly_cash_report", req.body, date, prevSale);
 
+    //break if previous sale;
+    if (prevSale) {
+      return res.send({ message: "Order is completed" });
+    }
+
+    //product report;
     for (item of products) {
       //update product stock ;
       const productStockSql = `UPDATE ${database}.products SET stock = stock - ${item.qty}, sold = sold + ${item.qty} WHERE id = '${item.productId}'`;
@@ -287,11 +284,6 @@ async function completeOrder(req, res, next) {
     //update deliver man info;
     const deliverSql = `UPDATE ${database}.users SET delivered_order = delivered_order + 1, haveMoney = haveMoney + ${req.body.payment}, total_sale = total_sale + ${shopData.totalSale}, due_sale = due_sale + ${shopData.dueSale} WHERE id = ${delivered_by}`;
     await queryDocument(deliverSql);
-
-    //break if previous sale;
-    if (prevSale) {
-      return res.send({ message: "Order is completed" });
-    }
 
     //update targeted amount if exists;
     await updateuserTarget(
@@ -337,6 +329,7 @@ async function updateuserTarget(id, totalSale, shopCommission) {
   }
 }
 
+//done;
 async function getCollection(req, res, next) {
   try {
     const { payment, due, discount, collection, shopId, collected_by } =
@@ -345,8 +338,12 @@ async function getCollection(req, res, next) {
     //check have due;
     const haveDueSql = `SELECT id FROM ${database}.orders WHERE id = '${req.query.id}' AND orders.due < ${payment}`;
     const haveDue = await queryDocument(haveDueSql);
-    if (haveDue.length) {
-      throw { message: "Opps! Too much payment" };
+    if (haveDue.length) throw { message: "Opps! Too much payment" };
+
+    const todaySql = `SELECT id FROM ${database}.daily_cash_report WHERE DATE(date) = CURDATE()`;
+    const todayData = await queryDocument(todaySql);
+    if (!todayData.length) {
+      throw { message: "Opps! An error occured. Refresh the app." };
     }
 
     //update order info;
@@ -368,47 +365,16 @@ async function getCollection(req, res, next) {
     await queryDocument(deliverSql);
 
     //update cash report ;
-    const isExistTodaySql = `SELECT id FROM ${database}.daily_cash_report WHERE DATE(date) = CURDATE()`;
-    const isExistToday = await queryDocument(isExistTodaySql);
+    let dailysql = `UPDATE ${database}.daily_cash_report SET collection = collection + ${payment}, closing = closing + ${payment},marketDue = marketDue - ${payment} - ${discount}, expense = expense + ${discount} WHERE id = '${todayData[0].id}'`;
+    await queryDocument(dailysql);
 
-    if (isExistToday.length) {
-      let updateReportSql = `UPDATE ${database}.daily_cash_report SET collection = collection + ${payment}, closing = closing + ${payment},marketDue = marketDue - ${payment} - ${discount}, expense = expense + ${discount} WHERE id = '${isExistToday[0].id}'`;
-      await queryDocument(updateReportSql);
-
-      const date = new Date();
-      const month = date.toLocaleString("en-us", { month: "long" });
-      const year = date.getFullYear();
-      const updatemonthlySql = `UPDATE ${database}.monthly_cash_report SET collection = collection + ${payment},closing = closing + ${payment}, marketDue = marketDue - ${payment} - ${discount},expense = expense + ${discount} WHERE month = '${month}'`;
-      await queryDocument(updatemonthlySql);
-      const updateyearlySql = `UPDATE ${database}.yearly_cash_report SET collection = collection + ${payment}, closing = closing + ${payment}, marketDue = marketDue - ${payment} - ${discount},expense = expense + ${discount} WHERE year = '${year}'`;
-      await queryDocument(updateyearlySql);
-    } else {
-      const date = new Date();
-      await insertCashReport(
-        req,
-        "daily_cash_report",
-        date,
-        "date",
-        payment,
-        discount
-      );
-      await insertCashReport(
-        req,
-        "monthly_cash_report",
-        date,
-        "month",
-        payment,
-        discount
-      );
-      await insertCashReport(
-        req,
-        "yearly_cash_report",
-        date,
-        "year",
-        payment,
-        discount
-      );
-    }
+    const date = new Date();
+    const month = date.toLocaleString("en-us", { month: "long" });
+    const year = date.getFullYear();
+    const updatemonthlySql = `UPDATE ${database}.monthly_cash_report SET collection = collection + ${payment},closing = closing + ${payment}, marketDue = marketDue - ${payment} - ${discount},expense = expense + ${discount} WHERE month = '${month}'`;
+    await queryDocument(updatemonthlySql);
+    const updateyearlySql = `UPDATE ${database}.yearly_cash_report SET collection = collection + ${payment}, closing = closing + ${payment}, marketDue = marketDue - ${payment} - ${discount},expense = expense + ${discount} WHERE year = '${year}'`;
+    await queryDocument(updateyearlySql);
 
     if (discount) {
       //insert or update expense information;
@@ -450,19 +416,23 @@ async function updateStockReport(
   if (isExist.length) {
     let updateReportSql = `UPDATE ${database}.${row} SET totalSold = totalSold + ${item.qty}, remainingStock = remainingStock - ${item.qty} WHERE id = '${isExist[0].id}'`;
     if (purchase) {
-      updateReportSql = `UPDATE ${database}.${row} SET purchased = purchased + ${item.qty}, remainingStock = remainingStock + ${item.qty} WHERE id = '${isExist[0].id}'`;
+      updateReportSql = `UPDATE ${database}.${row} SET purchased = purchased + ${item.purchased}, remainingStock = remainingStock + ${item.purchased} WHERE id = '${isExist[0].id}'`;
     }
     await queryDocument(updateReportSql);
     return;
   }
 
+  const stock = parseFloat(item.stock || 0);
+  const purchased = parseFloat(item.purchased || 0);
+  const qty = parseFloat(item.qty || 0);
   const data = {
     productId: item.productId,
-    previousStock: item.stock || 0,
-    totalSold: item.qty || 0,
-    purchased: item.purchased || 0,
-    remainingStock: purchase ? item.stock + item.qty : item.stock - item.qty,
+    previousStock: stock,
+    totalSold: qty || 0,
+    purchased: purchased,
+    remainingStock: purchase ? stock + purchased : stock - qty,
   };
+
   if (dataCol === "month") {
     data.month = date.toLocaleString("en-us", { month: "long" });
     data.year = new Date().getFullYear();
@@ -479,13 +449,11 @@ async function updateCashReport(
   row,
   item,
   date,
-  dataCol,
-  purchase = false,
-  expensed = false,
-  prev = false
+  ispurchase = false,
+  isexpense = false
 ) {
   database = req.query.db;
-  const { payment, due, discount, totalSale, purchased, expense } = item;
+  const { payment, due, discount, purchased } = item;
 
   let isExiststockSql = `SELECT id FROM ${database}.${row} `;
   if (row === "monthly_cash_report") {
@@ -497,85 +465,14 @@ async function updateCashReport(
   } else isExiststockSql += "WHERE DATE(`date`) = CURDATE()";
 
   const isExist = await queryDocument(isExiststockSql);
+  if (!isExist.length) return;
 
-  if (isExist.length) {
-    let updateReportSql = `UPDATE ${database}.${row} SET ${
-      prev ? "" : `totalSale = totalSale + ${totalSale},`
-    } dueSale = dueSale + ${due}, expense= expense + ${discount}, marketDue = marketDue + ${due}, closing = closing + ${payment} WHERE id = '${
-      isExist[0].id
-    }'`;
-    if (purchase)
-      updateReportSql = `UPDATE ${database}.${row} SET purchase = purchase + ${purchased}, closing = closing - ${purchased} WHERE id = '${isExist[0].id}'`;
-    else if (expensed)
-      updateReportSql = `UPDATE ${database}.${row} SET expense = expense + ${expense}, closing = closing - ${expense} WHERE id = '${isExist[0].id}'`;
-    await queryDocument(updateReportSql);
-    return;
-  }
-
-  //insert the report;
-  //get the previous report;
-  const prevData = await getPrevData(row, date);
-
-  const data = {
-    opening: prevData[0]?.closing || 0,
-    totalSale: prev ? 0 : totalSale || 0,
-    dueSale: due || 0,
-    expense: discount || 0,
-    marketDue: prevData[0]?.marketDue || 0 + due,
-    purchase: purchase || 0,
-    expense: expense || 0,
-    closing: payment || -purchased || -expense,
-  };
-
-  await insertABoilerFlat(dataCol, data, row, date);
-}
-
-async function getPrevData(row, date) {
-  let prevSql = `SELECT closing,marketDue FROM ${database}.${row} `;
-  if (row === "monthly_cash_report") {
-    const prevMonth = getPreviousMonthName(date);
-    prevSql += `WHERE month = '${prevMonth}'`;
-  } else if (row === "yearly_cash_report") {
-    const prevYear = date.getFullYear() - 1;
-    prevSql += `WHERE year = '${prevYear}'`;
-  } else {
-    const prevDay = new Date(date.valueOf() - 1000 * 60 * 60 * 24);
-    prevSql += `WHERE date = '${prevDay.toISOString()}'`;
-  }
-  const prevData = await queryDocument(prevSql);
-  return prevData;
-}
-
-async function insertABoilerFlat(dataCol, data, row, date) {
-  if (dataCol === "month") {
-    data.month = date.toLocaleString("en-us", { month: "long" });
-    data.year = date.getFullYear();
-  } else if (dataCol === "year") {
-    data.year = date.getFullYear();
-  }
-  const insertSql = `INSERT INTO ${database}.${row} SET `;
-  await postDocument(insertSql, data);
-}
-
-function getPreviousMonthName(date) {
-  return new Date(date.getFullYear(), date.getMonth() - 1, 1).toLocaleString(
-    "en-us",
-    { month: "long" }
-  );
-}
-
-async function insertCashReport(req, row, date, col, payment, discount) {
-  database = req.query.db;
-  const prevData = await getPrevData(row, date);
-  const data = {
-    opening: prevData[0]?.closing || 0,
-    collection: payment,
-    closing: prevData[0]?.closing || 0 + payment,
-    expense: discount,
-    dueSale: prevData[0]?.dueSale - discount,
-    marketDue: prevData[0]?.marketDue - payment - discount,
-  };
-  await insertABoilerFlat(col, data, row, date);
+  let updateReportSql = `UPDATE ${database}.${row} SET totalSale = totalSale + ${item.totalSale}, dueSale = dueSale + ${due}, expense= expense + ${discount}, marketDue = marketDue + ${due}, closing = closing + ${payment} WHERE id = '${isExist[0].id}'`;
+  if (ispurchase)
+    updateReportSql = `UPDATE ${database}.${row} SET purchase = purchase + ${purchased}, closing = closing - ${purchased} WHERE id = '${isExist[0].id}'`;
+  else if (isexpense)
+    updateReportSql = `UPDATE ${database}.${row} SET expense = expense + ${item.expense}, closing = closing - ${item.expense} WHERE id = '${isExist[0].id}'`;
+  await queryDocument(updateReportSql);
 }
 
 function dateformatter(date) {
@@ -589,5 +486,4 @@ module.exports = {
   removeOrder,
   updateCashReport,
   updateStockReport,
-  insertCashReport,
 };

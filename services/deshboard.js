@@ -25,12 +25,12 @@ async function getInialData(req, res, next) {
     cashReportSql += "WHERE DATE(`date`) = CURDATE()";
     const cashReport = await queryDocument(cashReportSql);
 
-    const data = { stockReport, products, users, cashReport: cashReport[0] };
-
-    if (!data.cashReport) {
-      const cashReport = await cashObserver(req);
-      data.cashReport = cashReport;
-    }
+    const data = {
+      stockReport,
+      products,
+      users,
+      cashReport: cashReport[0] || noCashReport,
+    };
 
     res.send(data);
   } catch (error) {
@@ -191,52 +191,6 @@ const noCashReport = {
   marketDue: 0,
   closing: 0,
 };
-let observer = undefined;
-async function cashObserver(req) {
-  if (observer) clearInterval(observer);
-  let cashReport = noCashReport;
-  const today = new Date().toISOString().slice(0, 10);
-  const data = await handleCashReport(req);
-  if (data) cashReport = data;
-
-  observer = setInterval(async () => {
-    const now = new Date().toISOString().slice(0, 10);
-    if (today !== now) {
-      let cashReportSql = `SELECT id FROM ${req.query.db}.daily_cash_report `;
-      cashReport += "WHERE DATE(`date`) = CURDATE()";
-      const isExist = await queryDocument(cashReportSql);
-      if (!isExist.length) {
-        const data = await handleCashReport(req);
-        if (data) cashReport = data;
-      }
-    }
-  }, 1000 * 60 * 60);
-
-  return cashReport;
-}
-async function handleCashReport(req) {
-  let day = 1;
-  let prevDaysCashReport = [];
-  let cashReport = null;
-  while (!prevDaysCashReport.length && day < 10) {
-    const prevDaysCashReportSql = `SELECT id, closing, marketDue FROM ${req.query.db}.daily_cash_report WHERE DATE(date) = DATE_SUB(CURDATE(), INTERVAL ${day} DAY)`;
-    prevDaysCashReport = await queryDocument(prevDaysCashReportSql);
-    day++;
-  }
-
-  if (prevDaysCashReport.length) {
-    const prevOpening = prevDaysCashReport[0].closing;
-    const marketDue = prevDaysCashReport[0].marketDue;
-    const insertCashReportSql = `INSERT INTO ${req.query.db}.daily_cash_report SET opening = ${prevOpening}, marketDue = ${marketDue}, closing = ${prevOpening}`;
-    await queryDocument(insertCashReportSql);
-
-    let cashReportSql = `SELECT * FROM ${req.query.db}.daily_cash_report `;
-    cashReportSql += "WHERE DATE(`date`) = CURDATE()";
-    const data = await queryDocument(cashReportSql);
-    cashReport = data[0];
-  }
-  return cashReport;
-}
 
 module.exports = {
   getData,

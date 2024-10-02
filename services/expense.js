@@ -93,7 +93,6 @@ async function addReport(req, data, res, next, updateUser = true) {
       "daily_cash_report",
       payload,
       date,
-      "date",
       false,
       true
     );
@@ -104,7 +103,6 @@ async function addReport(req, data, res, next, updateUser = true) {
       "monthly_cash_report",
       payload,
       date,
-      "month",
       false,
       true
     );
@@ -115,7 +113,6 @@ async function addReport(req, data, res, next, updateUser = true) {
       "yearly_cash_report",
       payload,
       date,
-      "year",
       false,
       true
     );

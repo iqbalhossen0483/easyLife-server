@@ -1,10 +1,6 @@
 const express = require("express");
 const { queryDocument, postDocument } = require("../mysql");
-const {
-  updateStockReport,
-  updateCashReport,
-  insertCashReport,
-} = require("../services/order");
+const { updateStockReport, updateCashReport } = require("../services/order");
 const multer = require("../middleWares/multer");
 const purchaseRouter = express.Router();
 
@@ -80,10 +76,17 @@ purchaseRouter.post("/", multer.array("files"), async (req, res, next) => {
 
       //update product report;
       //update daily stock report;
+      const data = {
+        productId: item.productId,
+        purchased: item.qty,
+        stock: item.stock,
+      };
+      console.log(data);
+
       await updateStockReport(
         req,
         "daily_stock_report",
-        item,
+        data,
         date,
         "daily",
         true
@@ -93,7 +96,7 @@ purchaseRouter.post("/", multer.array("files"), async (req, res, next) => {
       await updateStockReport(
         req,
         "monthly_stock_report",
-        item,
+        data,
         date,
         "month",
         true
@@ -103,7 +106,7 @@ purchaseRouter.post("/", multer.array("files"), async (req, res, next) => {
       await updateStockReport(
         req,
         "yearly_stock_report",
-        item,
+        data,
         date,
         "year",
         true
@@ -114,34 +117,13 @@ purchaseRouter.post("/", multer.array("files"), async (req, res, next) => {
     if (giveAmount) {
       //update daily cash report;
       const data = { purchased: giveAmount };
-      await updateCashReport(
-        req,
-        "daily_cash_report",
-        data,
-        date,
-        "date",
-        true
-      );
+      await updateCashReport(req, "daily_cash_report", data, date, true);
 
       //update monthly cash report;
-      await updateCashReport(
-        req,
-        "monthly_cash_report",
-        data,
-        date,
-        "month",
-        true
-      );
+      await updateCashReport(req, "monthly_cash_report", data, date, true);
 
       //update yearly cash report;
-      await updateCashReport(
-        req,
-        "yearly_cash_report",
-        data,
-        date,
-        "year",
-        true
-      );
+      await updateCashReport(req, "yearly_cash_report", data, date, true);
     }
 
     res.send({ message: "Product purchase successfully added" });
@@ -211,48 +193,16 @@ purchaseRouter.put(
       const deliverSql = `UPDATE ${req.query.db}.users SET haveMoney = haveMoney - ${payment} WHERE id = ${sent_by}`;
       await queryDocument(deliverSql);
 
-      //update cash report ;
-      const isExistTodaySql = `SELECT id FROM ${req.query.db}.daily_cash_report WHERE DATE(date) = CURDATE()`;
-      const isExistToday = await queryDocument(isExistTodaySql);
+      //update daily cash report;
+      const data = { purchased: payment };
+      const date = new Date();
+      await updateCashReport(req, "daily_cash_report", data, date, true);
 
-      if (isExistToday.length) {
-        let updateReportSql = `UPDATE ${req.query.db}.daily_cash_report SET closing = closing - ${payment}, purchase = purchase + ${payment} WHERE id = '${isExistToday[0].id}'`;
-        await queryDocument(updateReportSql);
+      //update monthly cash report;
+      await updateCashReport(req, "monthly_cash_report", data, date, true);
 
-        const date = new Date();
-        const month = date.toLocaleString("en-us", { month: "long" });
-        const year = date.getFullYear();
-        const updatemonthlySql = `UPDATE ${req.query.db}.monthly_cash_report SET closing = closing + ${payment},  purchase = purchase + ${payment}  WHERE month = '${month}'`;
-        await queryDocument(updatemonthlySql);
-        const updateyearlySql = `UPDATE ${req.query.db}.yearly_cash_report SET closing = closing + ${payment},  purchase = purchase + ${payment} WHERE year = '${year}'`;
-        await queryDocument(updateyearlySql);
-      } else {
-        const date = new Date();
-        await insertCashReport(
-          req,
-          "daily_cash_report",
-          date,
-          "date",
-          payment,
-          discount
-        );
-        await insertCashReport(
-          req,
-          "monthly_cash_report",
-          date,
-          "month",
-          payment,
-          discount
-        );
-        await insertCashReport(
-          req,
-          "yearly_cash_report",
-          date,
-          "year",
-          payment,
-          discount
-        );
-      }
+      //update yearly cash report;
+      await updateCashReport(req, "yearly_cash_report", data, date, true);
 
       res.send({ message: "Collection send successfully" });
     } catch (error) {
