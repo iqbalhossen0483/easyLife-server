@@ -28,6 +28,7 @@ app.use((req, res, next) => {
   } else {
     const database = req.headers.database;
     if (!database) {
+      console.log(req.url);
       next("Access Denied");
     }
     req.query.db = database;

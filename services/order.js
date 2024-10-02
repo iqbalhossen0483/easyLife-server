@@ -1,4 +1,5 @@
 const { postDocument, queryDocument } = require("../mysql");
+const { commisionObserver, handleCommition } = require("./common");
 let database;
 
 //done;
@@ -287,11 +288,13 @@ async function completeOrder(req, res, next) {
 
     //update targeted amount if exists;
     await updateuserTarget(
+      req,
       delivered_by,
       shopData.totalSale,
       shopData.commission
     );
     await updateuserTarget(
+      req,
       req.body.created_by,
       shopData.totalSale,
       shopData.commission
@@ -303,29 +306,28 @@ async function completeOrder(req, res, next) {
   }
 }
 
-async function updateuserTarget(id, totalSale, shopCommission) {
+function addHours(date) {
+  const hoursToAdd = 6 * 60 * 60 * 1000;
+  date.setTime(date.getTime() + hoursToAdd);
+  return date;
+}
+async function updateuserTarget(req, id, totalSale, shopCommission) {
   const targetsql = `SELECT * FROM ${database}.target_commision tc WHERE tc.status = 'running' AND tc.user_id = '${id}'`;
   const target = await queryDocument(targetsql);
 
   if (target.length) {
     const amunt = (totalSale * (shopCommission / 100)) / 2;
-    const achieveAmnt = target[0].achiveAmnt + amunt;
     const sql = `UPDATE ${database}.target_commision SET achiveAmnt = achiveAmnt + ${amunt} WHERE id = '${target[0].id}'`;
     await queryDocument(sql);
 
-    if (achieveAmnt >= target[0].targetedAmnt) {
-      const sql = `UPDATE ${database}.target_commision SET `;
-      const opt = ` WHERE id = '${target[0].id}'`;
-      await postDocument(sql, { status: "achieved" }, opt);
+    let endDate = new Date(`${target[0].end_date.slice(0, 10)}T23:59:59.000Z`);
+    let currentDate = addHours(new Date());
+    let endTime = endDate.getTime() - currentDate.getTime();
 
-      const acsql = `INSERT INTO ${database}.pending_commition SET `;
-      const payload = {
-        user_id: target[0].user_id,
-        target_commission_id: target[0].id,
-        commission: target[0].targetedAmnt * (target[0].commission / 100),
-      };
-      await postDocument(acsql, payload);
+    if (target[0].achiveAmnt + amunt >= target[0].targetedAmnt) {
+      await handleCommition(req, target[0].id);
     }
+    commisionObserver(req, target[0].id, endTime);
   }
 }
 

@@ -1,5 +1,5 @@
 const { postDocument, queryDocument } = require("../mysql");
-const { deleteImage } = require("./common");
+const { deleteImage, commisionObserver } = require("./common");
 const { addReport } = require("./expense");
 
 async function getUser(req, res, next) {
@@ -99,46 +99,19 @@ function addHours(date) {
 async function addATargetForUser(req, res, next) {
   try {
     const data = req.body;
-    const sql = `INSERT INTO ${req.query.db}.target_commision SET `;
+
     let endDate = new Date(`${data.end_date.slice(0, 10)}T23:59:59.000Z`);
+    const sql = `INSERT INTO ${req.query.db}.target_commision SET `;
     data.end_date = JSON.parse(JSON.stringify(endDate));
+
     const target = await postDocument(sql, data);
+
+    data.end_date = JSON.parse(JSON.stringify(endDate));
     if (target.insertId) {
       let currentDate = addHours(new Date());
       let endTime = endDate.getTime() - currentDate.getTime();
 
-      setTimeout(() => {
-        setTimeout(async () => {
-          try {
-            const targetSql = `SELECT * FROM ${req.query.db}.target_commision WHERE id = '${target.insertId}'`;
-            const currtTarget = await queryDocument(targetSql);
-            let status = currtTarget[0].status;
-
-            if (status === "running") {
-              const sql = `UPDATE ${req.query.db}.target_commision SET `;
-              const opt = ` WHERE id = '${currtTarget[0].id}'`;
-
-              if (currtTarget[0].achiveAmnt >= currtTarget[0].targetedAmnt) {
-                status = "achieved";
-                const sql = `INSERT INTO ${req.query.db}.pending_commition SET `;
-                const payload = {
-                  user_id: currtTarget[0].user_id,
-                  target_commission_id: currtTarget[0].id,
-                  commission:
-                    currtTarget[0].targetedAmnt *
-                    (currtTarget[0].commission / 100),
-                };
-                await postDocument(sql, payload);
-              } else status = "failed";
-
-              await postDocument(sql, { status }, opt);
-            }
-          } catch (error) {
-            console.log(error);
-          }
-        }, endTime / 2);
-      }, endTime / 2);
-
+      commisionObserver(req, target.insertId, endTime);
       res.send({ message: "Target added successfully" });
     } else throw { message: "Could not insert" };
   } catch (error) {

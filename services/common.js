@@ -1,5 +1,5 @@
 const fs = require("fs");
-const { queryDocument } = require("../mysql");
+const { queryDocument, postDocument } = require("../mysql");
 
 async function deleteImage(fileName) {
   try {
@@ -72,4 +72,52 @@ async function handleCashReport(req, row) {
   }
 }
 
-module.exports = { deleteImage, cashObserver };
+let firstTimer = undefined;
+let secondTimer = undefined;
+async function commisionObserver(req, id, endTime) {
+  if (firstTimer) clearTimeout(firstTimer);
+  if (secondTimer) clearTimeout(secondTimer);
+
+  firstTimer = setTimeout(() => {
+    secondTimer = setTimeout(async () => {
+      try {
+        await handleCommition(req, id);
+      } catch (error) {
+        console.log(error);
+      }
+    }, endTime / 2);
+  }, endTime / 2);
+}
+
+async function handleCommition(req, id) {
+  const targetSql = `SELECT * FROM ${req.query.db}.target_commision WHERE id = '${id}'`;
+  const target = await queryDocument(targetSql);
+  if (!target.length) return;
+
+  let status = target[0].status;
+
+  if (status === "running") {
+    const sql = `UPDATE ${req.query.db}.target_commision SET `;
+    const opt = ` WHERE id = '${target[0].id}'`;
+
+    if (target[0].achiveAmnt >= target[0].targetedAmnt) {
+      status = "achieved";
+      const sql = `INSERT INTO ${req.query.db}.pending_commition SET `;
+      const payload = {
+        user_id: target[0].user_id,
+        target_commission_id: target[0].id,
+        commission: target[0].targetedAmnt * (target[0].commission / 100),
+      };
+      await postDocument(sql, payload);
+    } else status = "failed";
+
+    await postDocument(sql, { status }, opt);
+  }
+}
+
+module.exports = {
+  deleteImage,
+  cashObserver,
+  commisionObserver,
+  handleCommition,
+};
