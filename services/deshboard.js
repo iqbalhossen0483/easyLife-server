@@ -168,12 +168,98 @@ async function updateSiteinfo(req, res, next) {
     next(error);
   }
 }
+
 async function deletePendingCommition(req, res, next) {
   try {
     const sql = `DELETE From ${req.query.db}.target_commision WHERE id = '${req.query.id}'`;
     const result = await queryDocument(sql);
     if (!result.affectedRows) throw { message: "Could not delete" };
     res.send({ message: "Deleted successfully" });
+  } catch (error) {
+    next(error);
+  }
+}
+
+async function chartData(req, res, next) {
+  try {
+    let saleSql = `SELECT totalSale, dueSale,collection,expense,marketDue, ${
+      req.query.method === "Month" ? "date" : "month"
+    } FROM ${req.query.db}.${
+      req.query.method === "Month" ? "daily_cash_report" : "monthly_cash_report"
+    } WHERE `;
+    const date = new Date(req.query.date);
+
+    if (req.query.method === "Month") {
+      const firstDay = new Date(
+        date.getFullYear(),
+        date.getMonth(),
+        1
+      ).toISOString();
+      const lastDay = new Date(
+        date.getFullYear(),
+        date.getMonth() + 1,
+        1
+      ).toISOString();
+      saleSql += `date <= '${lastDay}' AND date >= '${firstDay}'`;
+    } else {
+      const year = date.getFullYear();
+      saleSql += `year = '${year}'`;
+    }
+
+    const data = await queryDocument(saleSql);
+    res.send(data);
+  } catch (error) {
+    next(error);
+  }
+}
+async function pichartData(req, res, next) {
+  try {
+    let saleSql = `SELECT * FROM ${req.query.db}.${
+      req.query.method === "Month"
+        ? "monthly_cash_report"
+        : "yearly_cash_report"
+    } WHERE `;
+
+    const date = new Date(req.query.date);
+    if (req.query.method === "Month") {
+      const month = date.toLocaleString("en-bd", { month: "long" });
+      const year = date.getFullYear();
+      saleSql += `month='${month}' AND year=${year}`;
+    } else {
+      const year = date.getFullYear();
+      saleSql += `year = ${year}`;
+    }
+
+    const data = await queryDocument(saleSql);
+    res.send(data);
+  } catch (error) {
+    next(error);
+  }
+}
+async function productChartData(req, res, next) {
+  try {
+    let saleSql = `SELECT st.*, products.shortName as name FROM ${
+      req.query.db
+    }.${
+      req.query.method === "Month"
+        ? "monthly_stock_report"
+        : "yearly_stock_report"
+    } st INNER JOIN ${
+      req.query.db
+    }.products ON products.id = st.productId WHERE `;
+    const date = new Date(req.query.date);
+
+    if (req.query.method === "Month") {
+      const month = date.toLocaleString("en-bd", { month: "long" });
+      const year = date.getFullYear();
+      saleSql += `month = '${month}' AND year = '${year}'`;
+    } else {
+      const year = date.getFullYear();
+      saleSql += `year = '${year}'`;
+    }
+
+    const data = await queryDocument(saleSql);
+    res.send(data);
   } catch (error) {
     next(error);
   }
@@ -200,4 +286,7 @@ module.exports = {
   achieveCommission,
   updateSiteinfo,
   deletePendingCommition,
+  chartData,
+  pichartData,
+  productChartData,
 };

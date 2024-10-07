@@ -51,7 +51,7 @@ async function handleCashReport(req, row) {
 
   if (isExist.length) return;
   else {
-    let prevSql = `SELECT row.closing, row.marketDue FROM ${req.query.db}.${row} row ORDER BY row.id DESC LIMIT 1`;
+    let prevSql = `SELECT report.closing, report.marketDue FROM ${req.query.db}.${row} report ORDER BY report.id DESC LIMIT 1`;
     const prevData = await queryDocument(prevSql);
     if (prevData.length) {
       const opening = prevData[0].closing;

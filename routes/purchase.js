@@ -1,7 +1,7 @@
-const express = require("express");
-const { queryDocument, postDocument } = require("../mysql");
 const { updateStockReport, updateCashReport } = require("../services/order");
+const { queryDocument, postDocument } = require("../mysql");
 const multer = require("../middleWares/multer");
+const express = require("express");
 const purchaseRouter = express.Router();
 
 purchaseRouter.post("/", multer.array("files"), async (req, res, next) => {
@@ -81,7 +81,6 @@ purchaseRouter.post("/", multer.array("files"), async (req, res, next) => {
         purchased: item.qty,
         stock: item.stock,
       };
-      console.log(data);
 
       await updateStockReport(
         req,

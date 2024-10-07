@@ -421,29 +421,32 @@ async function updateStockReport(
       updateReportSql = `UPDATE ${database}.${row} SET purchased = purchased + ${item.purchased}, remainingStock = remainingStock + ${item.purchased} WHERE id = '${isExist[0].id}'`;
     }
     await queryDocument(updateReportSql);
-    return;
+  } else {
+    const stock = parseFloat(item.stock || 0);
+    const purchased = parseFloat(item.purchased || 0);
+    const qty = parseFloat(item.qty || 0);
+    const data = {
+      productId: item.productId,
+      previousStock: stock,
+    };
+    if (purchase) {
+      data.purchased = purchased;
+      data.remainingStock = stock + purchased;
+    } else {
+      data.totalSold = qty;
+      data.remainingStock = stock - qty;
+    }
+
+    if (dataCol === "month") {
+      data.month = date.toLocaleString("en-us", { month: "long" });
+      data.year = new Date().getFullYear();
+    } else if (dataCol === "year") {
+      data.year = date.getFullYear();
+    }
+
+    const insertSql = `INSERT INTO ${database}.${row} SET `;
+    await postDocument(insertSql, data);
   }
-
-  const stock = parseFloat(item.stock || 0);
-  const purchased = parseFloat(item.purchased || 0);
-  const qty = parseFloat(item.qty || 0);
-  const data = {
-    productId: item.productId,
-    previousStock: stock,
-    totalSold: qty || 0,
-    purchased: purchased,
-    remainingStock: purchase ? stock + purchased : stock - qty,
-  };
-
-  if (dataCol === "month") {
-    data.month = date.toLocaleString("en-us", { month: "long" });
-    data.year = new Date().getFullYear();
-  } else if (dataCol === "year") {
-    data.year = date.getFullYear();
-  }
-
-  const insertSql = `INSERT INTO ${database}.${row} SET `;
-  await postDocument(insertSql, data);
 }
 
 async function updateCashReport(

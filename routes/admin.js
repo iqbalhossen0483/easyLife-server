@@ -7,6 +7,9 @@ const {
   achieveCommission,
   updateSiteinfo,
   deletePendingCommition,
+  chartData,
+  pichartData,
+  productChartData,
 } = require("../services/deshboard");
 const adminRouter = express.Router();
 
@@ -17,5 +20,8 @@ adminRouter.get("/commission", getPendingCommission);
 adminRouter.post("/commission", achieveCommission);
 adminRouter.delete("/commission", deletePendingCommition);
 adminRouter.put("/updateinfo", updateSiteinfo);
+adminRouter.get("/chartdata", chartData);
+adminRouter.get("/pichartdata", pichartData);
+adminRouter.get("/productchartdata", productChartData);
 
 module.exports = adminRouter;

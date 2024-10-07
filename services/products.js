@@ -5,6 +5,8 @@ async function postProduct(req, res, next) {
   try {
     if (req.file) req.body.profile = req.file.filename;
     const sql = `INSERT INTO ${req.query.db}.products SET `;
+    const stock = req.body.stock;
+    if (stock) req.body.purchased = stock;
     const result = await postDocument(sql, req.body);
     if (!result.insertId) throw { message: "Opps! unable to add" };
     res.send({ message: "Addedd successfully" });
