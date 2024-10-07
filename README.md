@@ -1,5 +1,7 @@
 EasyLife server is a Node JS backend project. 
+
 It's used for the EasyLife Mobile app. 
+
 There are three authentication role systems here 
 1. Admin
 2. Store Manager
