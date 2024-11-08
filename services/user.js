@@ -188,21 +188,22 @@ async function receive_balance(req, res, next) {
     const deleteTransactionSql = `DELETE FROM ${req.query.db}.pending_balance_transfer WHERE id = '${req.body.id}'`;
     await queryDocument(deleteTransactionSql);
 
-    if (req.body.purpose === "Salary") {
+    if (/Incentive|Salary/.test(req.body.purpose)) {
       const data = {
-        type: "Salary",
+        type: req.body.purpose,
         amount: req.body.amount,
         created_by: req.body.fromUser,
       };
-      await addReport(data, res, next, false);
-    } else {
+      await addReport(req, data, res, next, false);
+
+      // delete commission data to temporary table;
       if (req.body.commision) {
-        // delete commission data to temporary table;
         const deleteSql = `DELETE FROM ${req.query.db}.pending_commition WHERE id = '${req.body.commision}'`;
         await queryDocument(deleteSql);
       }
-      res.send({ message: "Balance rechived successfully" });
+      return;
     }
+    res.send({ message: "Balance rechived successfully" });
   } catch (error) {
     next(error);
   }
