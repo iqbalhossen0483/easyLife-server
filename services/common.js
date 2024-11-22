@@ -63,7 +63,7 @@ async function handleCashReport(req, row) {
       } else if (row === "yearly_cash_report") newSql += ` ,year = ${year}`;
       await queryDocument(newSql);
     } else {
-      const newSql = `INSERT INTO ${req.query.db}.${row} SET opening = 0, marketDue = 0, closing = 0`;
+      let newSql = `INSERT INTO ${req.query.db}.${row} SET opening = 0, marketDue = 0, closing = 0`;
       if (row === "monthly_cash_report") {
         newSql += ` ,month = '${month}', year = ${year}`;
       } else if (row === "yearly_cash_report") newSql += ` ,year = ${year}`;

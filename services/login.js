@@ -10,7 +10,7 @@ async function login(req, res, next) {
     const database = db[0];
     const primaryUserSql = `SELECT name FROM ${database.name}.users WHERE id = ${database.primary_user}`;
     const primaryUser = await queryDocument(primaryUserSql);
-    database.primary_user_name = primaryUser[0].name;
+    database.primary_user_name = primaryUser[0]?.name;
     //current user;
     const currentUserSql = `SELECT id FROM ${database.name}.users`;
     const currentUser = await queryDocument(currentUserSql);
