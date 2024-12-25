@@ -1,12 +1,23 @@
-EasyLife server is a Node JS backend project. 
+# EasyLife Server
 
-It's used for the EasyLife Mobile app. 
+**EasyLife Server** is a robust Node.js backend project designed to power the **EasyLife Mobile App**. 
 
-There are three authentication role systems here 
-1. Admin
-2. Store Manager
-3. Sales Man
+## Key Features
 
-Real-time Notification systems are implemented here, So the Admin can monitor every user and what they are doing in real-time.
+- **Role-Based Authentication**: 
+  - Three distinct roles:
+    - **Admin**
+    - **Store Manager**
+    - **Salesman**
+- **Real-Time Notification System**: 
+  - Enables the Admin to monitor user activities in real-time, ensuring seamless oversight and management.
 
-The technologies are NodeJS, ExpressJS, JSONwebtoken, expo-server-SDK, and MySQL.
+## Technologies Used
+
+- **Node.js**: For building a scalable and efficient backend.
+- **Express.js**: To simplify the development of APIs and handle server operations.
+- **JSON Web Token (JWT)**: For secure user authentication and session management.
+- **Expo Server SDK**: For managing push notifications in the mobile app.
+- **MySQL**: A relational database for storing and managing data.
+
+This project showcases a well-structured and feature-rich backend solution tailored to meet the demands of a real-time mobile application.
