@@ -4,7 +4,7 @@ const {
   getProducts,
   updateProduct,
   deleteProduct,
-} = require("../services/products");
+} = require("../controllers/products");
 const multer = require("../middleWares/multer");
 const productRouter = express.Router();
 

@@ -4,7 +4,7 @@ const {
   getOrders,
   updateOrder,
   removeOrder,
-} = require("../services/order");
+} = require("../controllers/order");
 
 const orderRouter = express.Router();
 

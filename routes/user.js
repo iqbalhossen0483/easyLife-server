@@ -9,7 +9,7 @@ const {
   receive_balance,
   decline_balance_transfer,
   recentActivity,
-} = require("../services/user");
+} = require("../controllers/user");
 const multer = require("../middleWares/multer");
 
 const userRouter = express.Router();

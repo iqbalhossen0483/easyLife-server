@@ -4,7 +4,7 @@ const {
   getSupplier,
   updateSupplier,
   deleteSupplier,
-} = require("../services/supplier");
+} = require("../controllers/supplier");
 const multer = require("../middleWares/multer");
 
 const supplierRouter = express.Router();
