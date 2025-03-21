@@ -32,7 +32,7 @@ async function login(req, res, next) {
       throw { message: "Username Or Password is Wrong" };
 
     delete user.password;
-    const token = jwt.sign({ ...user, database }, process.env.tokenSecret);
+    const token = jwt.sign({ ...user, database }, process.env.JWT_TOKEN_SECRET);
 
     const sqlTc = `SELECT * FROM ${database.name}.target_commision WHERE user_id = ${user.id}`;
     const tc = await queryDocument(sqlTc);
@@ -47,7 +47,7 @@ async function login(req, res, next) {
 
 async function checkIsLogin(req, res, next) {
   try {
-    const token = jwt.verify(req.query.token, process.env.tokenSecret);
+    const token = jwt.verify(req.query.token, process.env.JWT_TOKEN_SECRET);
     const database = token.database.name;
     if (!database) throw { message: "Access denied" };
 

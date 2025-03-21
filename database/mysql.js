@@ -1,11 +1,14 @@
 const mysql = require("mysql2/promise");
 
+const DB_PASSWORD =
+  process.env.NODE_ENV === "development" ? "" : process.env.DB_PASSWORD;
+
 async function mySql() {
   const db = await mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    database: "switchcafebd_controller",
-    password: "",
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    database: process.env.DB_NAME,
+    password: DB_PASSWORD,
     connectionLimit: 10,
     waitForConnections: true,
     dateStrings: true,
