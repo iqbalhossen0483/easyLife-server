@@ -1,4 +1,4 @@
-# EasyLife Server
+# RKB Bussiness App Server
 
 **EasyLife Server** is a robust Node.js backend project designed to power the **EasyLife Mobile App**. 
 
