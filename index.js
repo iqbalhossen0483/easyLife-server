@@ -12,11 +12,13 @@ const orderRouter = require("./routes/order");
 const productionRoute = require("./routes/production");
 const adminRouter = require("./routes/admin");
 const expenseRouter = require("./routes/expense");
+const morgan = require("morgan");
 require("dotenv").config();
 const app = express();
 const { Expo } = require("expo-server-sdk");
 const { queryDocument } = require("./mysql");
 const port = process.env.PORT || 5000;
+app.use(morgan("dev"));
 
 //midleware;
 app.use(cors());
@@ -29,7 +31,7 @@ app.use((req, res, next) => {
     const database = req.headers.database;
     if (!database) {
       console.log(req.url);
-      next("Access Denied");
+      next({ message: "Access denied" });
     }
     req.query.db = database;
     next();

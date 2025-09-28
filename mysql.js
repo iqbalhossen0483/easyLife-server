@@ -3,9 +3,9 @@ const mysql = require("mysql2/promise");
 async function mySql() {
   const db = await mysql.createConnection({
     host: "localhost",
-    user: "root",
+    user: "iqbal",
     database: "switchcafebd_controller",
-    password: "",
+    password: "60483",
     connectionLimit: 10,
     waitForConnections: true,
     dateStrings: true,

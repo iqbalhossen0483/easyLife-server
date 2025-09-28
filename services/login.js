@@ -7,19 +7,23 @@ async function login(req, res, next) {
     const bdSql = `SELECT * FROM db_list WHERE id = '${req.body.db}'`;
     const db = await queryDocument(bdSql);
     if (!db.length) throw { message: "There is no authorised user" };
+
     const database = db[0];
     const primaryUserSql = `SELECT name FROM ${database.name}.users WHERE id = ${database.primary_user}`;
     const primaryUser = await queryDocument(primaryUserSql);
     database.primary_user_name = primaryUser[0]?.name;
-    //current user;
+
+    //current user quantity;
     const currentUserSql = `SELECT id FROM ${database.name}.users`;
     const currentUser = await queryDocument(currentUserSql);
     database.current_user = currentUser.length - 1;
-    //current product;
+
+    //current product quantity;
     const currentProductSql = `SELECT id FROM ${database.name}.products`;
     const currentProduct = await queryDocument(currentProductSql);
     database.current_product = currentProduct.length - 1;
-    //current customer;
+
+    //current customer quantity;
     const currentCustomerSql = `SELECT id FROM ${database.name}.customers`;
     const currentCustomer = await queryDocument(currentCustomerSql);
     database.current_customer = currentCustomer.length - 1;
@@ -27,6 +31,7 @@ async function login(req, res, next) {
     const sql = `SELECT * FROM ${database.name}.users WHERE phone = '${req.body.phone}'`;
     const userdb = await queryDocument(sql);
     if (!userdb.length) throw { message: "There is no authorised user" };
+
     const user = userdb[0];
     if (user.password !== req.body.password)
       throw { message: "Username Or Password is Wrong" };
