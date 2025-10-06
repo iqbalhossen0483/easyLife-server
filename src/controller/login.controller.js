@@ -56,7 +56,7 @@ async function checkIsLogin(req, res, next) {
   try {
     const token = jwt.verify(req.query.token, process.env.tokenSecret);
     const database = token.database.name;
-    if (!database) throw { message: "Access denied" };
+    if (!database) throw { message: "Access denied", status: 401 };
 
     const sql = `SELECT * FROM ${database}.users WHERE phone = '${token.phone}'`;
     const user = await queryDocument(sql);
