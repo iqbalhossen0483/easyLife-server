@@ -20,7 +20,6 @@ async function getSupplier(req, res, next) {
       const sql = `SELECT * FROM ${req.query.db}.supplier WHERE id = '${req.query.id}'`;
       const supplier = await queryDocument(sql);
       const page = parseInt(req.query.page || 0);
-      const limit = (page + 1) * 51;
 
       const allOrdersql = `SELECT id FROM ${req.query.db}.purchased WHERE supplier_id = ${req.query.id}`;
       const allOrder = await queryDocument(allOrdersql);
@@ -31,7 +30,7 @@ async function getSupplier(req, res, next) {
         req.query.db
       }.users ON users.id = p.purchased_by WHERE supplier_id = ${
         req.query.id
-      } ORDER BY p.date DESC LIMIT ${page * 50}, ${limit - 1}`;
+      } ORDER BY p.date DESC LIMIT ${page * 50}, 50`;
       const orders = await queryDocument(ordersSql);
       supplier[0].orders = orders;
       res.send({ count: allOrder.length, data: supplier[0] });

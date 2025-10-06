@@ -31,7 +31,7 @@ app.use((req, res, next) => {
     const database = req.headers.database;
     if (!database) {
       console.log(req.url);
-      next({ message: "Access denied" });
+      next({ message: "Access denied", status: 401 });
     }
     req.query.db = database;
     next();
@@ -111,9 +111,7 @@ app.post("/message", async (req, res, next) => {
 //error handler;
 app.use((err, req, res, next) => {
   console.log(err);
-  res
-    .status(err.statusCode || 500)
-    .send({ message: err.message || "Internal error" });
+  res.status(err.statusCode || 500).send({ message: "Internal server error" });
 });
 
 //app listener;
