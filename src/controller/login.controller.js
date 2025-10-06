@@ -1,12 +1,13 @@
 const { queryDocument } = require("../services/mysql.service");
 const jwt = require("jsonwebtoken");
-const { cashObserver } = require("../services/common.service");
 
 async function login(req, res, next) {
   try {
     const bdSql = `SELECT * FROM db_list WHERE id = '${req.body.db}'`;
     const db = await queryDocument(bdSql);
-    if (!db.length) throw { message: "There is no authorised user" };
+    if (!db.length) {
+      throw { message: "There is no authorised user", status: 401 };
+    }
 
     const database = db[0];
     const primaryUserSql = `SELECT name FROM ${database.name}.users WHERE id = ${database.primary_user}`;
@@ -28,22 +29,29 @@ async function login(req, res, next) {
     const currentCustomer = await queryDocument(currentCustomerSql);
     database.current_customer = currentCustomer.length - 1;
 
+    // check user;
     const sql = `SELECT * FROM ${database.name}.users WHERE phone = '${req.body.phone}'`;
     const userdb = await queryDocument(sql);
-    if (!userdb.length) throw { message: "There is no authorised user" };
+    if (!userdb.length) {
+      throw { message: "There is no authorised user", status: 401 };
+    }
 
+    // check user password;
     const user = userdb[0];
-    if (user.password !== req.body.password)
-      throw { message: "Username Or Password is Wrong" };
+    if (user.password !== req.body.password) {
+      throw { message: "Username Or Password is Wrong", status: 401 };
+    }
 
+    // generate token;
     delete user.password;
     const token = jwt.sign({ ...user, database }, process.env.tokenSecret);
 
-    const sqlTc = `SELECT * FROM ${database.name}.target_commision WHERE user_id = ${user.id}`;
-    const tc = await queryDocument(sqlTc);
-    user.targets = tc;
-    req.query.db = database.name;
-    await cashObserver(req);
+    // get target commision of this user;
+    const sqlTargetCommision = `SELECT * FROM ${database.name}.target_commision WHERE user_id = ${user.id}`;
+    const targetCommision = await queryDocument(sqlTargetCommision);
+    user.targets = targetCommision;
+
+    // send response;
     res.send({ message: "Login successfull", token, data: { user, database } });
   } catch (error) {
     next(error);
@@ -81,7 +89,6 @@ async function checkIsLogin(req, res, next) {
     db[0].current_customer = currentCustomer.length - 1;
 
     req.query.db = database;
-    await cashObserver(req);
     res.send({ user: user[0], database: db[0] });
   } catch (error) {
     error.message = "Login failed";
