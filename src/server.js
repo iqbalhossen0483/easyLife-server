@@ -1,15 +1,15 @@
+const { sendNotification } = require("./controller/notification.controller");
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
 require("dotenv").config();
 const app = express();
-const { Expo } = require("expo-server-sdk");
-const { queryDocument } = require("./services/mysql.service");
+
 const port = process.env.PORT || 5000;
-app.use(morgan("dev"));
 
 //midleware;
 app.use(cors());
+app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.static("public"));
 app.use((req, res, next) => {
@@ -39,62 +39,7 @@ app.use("/order", require("./routes/order.route"));
 app.use("/admin", require("./routes/admin.route"));
 app.use("/expense", require("./routes/expense.route"));
 app.use("/production", require("./routes/production.route"));
-
-app.post("/message", async (req, res, next) => {
-  try {
-    // Create a new Expo SDK client
-    let expo = new Expo();
-
-    let tokens = [];
-    const sql = `SELECT pushToken FROM ${req.query.db}.users WHERE ${
-      req.body.data.toUser
-        ? `id = '${req.body.data.toUser}'`
-        : `id != '${req.body.data.id}' ${
-            req.body.data.admin ? " AND designation != 'Admin'" : ""
-          }`
-    }`;
-    const data = await queryDocument(sql);
-    for (const token of data) {
-      if (token.pushToken) {
-        tokens.push(token.pushToken);
-      }
-    }
-
-    // Create the messages that you want to send to clents
-    let messages = [];
-    for (let pushToken of tokens) {
-      if (!Expo.isExpoPushToken(pushToken)) {
-        console.error(`Push token ${pushToken} is not a valid Expo push token`);
-        continue;
-      }
-
-      messages.push({
-        to: pushToken,
-        sound: "default",
-        title: req.body.title,
-        body: req.body.body,
-        data: req.body.data,
-      });
-    }
-
-    let chunks = expo.chunkPushNotifications(messages);
-
-    (async () => {
-      for (let chunk of chunks) {
-        try {
-          await expo.sendPushNotificationsAsync(chunk);
-
-          res.send({ message: "Successfully pushed" });
-        } catch (error) {
-          console.error(error);
-          throw error;
-        }
-      }
-    })();
-  } catch (error) {
-    next(error);
-  }
-});
+app.post("/message", sendNotification);
 
 //error handler;
 app.use((err, req, res, next) => {
