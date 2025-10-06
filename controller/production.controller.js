@@ -1,5 +1,5 @@
 const { queryDocument, postDocument } = require("../mysql");
-const { updateStockReport } = require("./order");
+const { updateStockReport } = require("./order.controller");
 
 async function postProduction(req, res, next) {
   try {

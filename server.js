@@ -27,18 +27,18 @@ app.use((req, res, next) => {
 });
 
 //routes
-app.use("/", require("./routes/admin"));
-app.use("/user", require("./routes/user"));
-app.use("/login", require("./routes/login"));
-app.use("/customer", require("./routes/customers"));
-app.use("/notes", require("./routes/notes"));
-app.use("/product", require("./routes/products"));
-app.use("/supplier", require("./routes/supplier"));
-app.use("/purchase", require("./routes/purchase"));
-app.use("/order", require("./routes/order"));
-app.use("/admin", require("./routes/admin"));
-app.use("/expense", require("./routes/expense"));
-app.use("/production", require("./routes/production"));
+app.use("/", require("./routes/admin.route"));
+app.use("/user", require("./routes/user.route"));
+app.use("/login", require("./routes/login.route"));
+app.use("/customer", require("./routes/customers.route"));
+app.use("/notes", require("./routes/notes.route"));
+app.use("/product", require("./routes/products.route"));
+app.use("/supplier", require("./routes/supplier.route"));
+app.use("/purchase", require("./routes/purchase.route"));
+app.use("/order", require("./routes/order.route"));
+app.use("/admin", require("./routes/admin.route"));
+app.use("/expense", require("./routes/expense.route"));
+app.use("/production", require("./routes/production.route"));
 
 app.post("/message", async (req, res, next) => {
   try {

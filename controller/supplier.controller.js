@@ -1,5 +1,5 @@
 const { postDocument, queryDocument } = require("../mysql");
-const { deleteImage } = require("./common");
+const { deleteImage } = require("../services/common");
 
 async function postSuppier(req, res, next) {
   try {

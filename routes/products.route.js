@@ -4,8 +4,8 @@ const {
   getProducts,
   updateProduct,
   deleteProduct,
-} = require("../services/products");
-const multer = require("../middleWares/multer");
+} = require("../controller/products.controller");
+const multer = require("../middleware/multer");
 const productRouter = express.Router();
 
 productRouter

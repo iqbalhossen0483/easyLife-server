@@ -7,8 +7,8 @@ const {
   addExpenseReport,
   getExpenseReports,
   achieveExpense,
-  declineExpense
-} = require("../services/expense");
+  declineExpense,
+} = require("../controller/expense.controller");
 
 const expenseRouter = express.Router();
 

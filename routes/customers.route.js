@@ -1,11 +1,11 @@
 const express = require("express");
-const multer = require("../middleWares/multer");
+const multer = require("../middleware/multer");
 const {
   postCustomer,
   getCustomers,
   updateCustomer,
   deleteCustomer,
-} = require("../services/customers");
+} = require("../controller/customer.controller");
 const customerRoute = express.Router();
 
 customerRoute

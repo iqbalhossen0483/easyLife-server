@@ -1,6 +1,6 @@
 const { queryDocument } = require("../mysql");
 const jwt = require("jsonwebtoken");
-const { cashObserver } = require("./common");
+const { cashObserver } = require("../services/common");
 
 async function login(req, res, next) {
   try {

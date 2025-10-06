@@ -10,7 +10,7 @@ const {
   chartData,
   pichartData,
   productChartData,
-} = require("../services/deshboard");
+} = require("../controller/deshboard.controller");
 const adminRouter = express.Router();
 
 adminRouter.get("/", getData);

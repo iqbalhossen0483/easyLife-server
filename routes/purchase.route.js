@@ -1,6 +1,9 @@
-const { updateStockReport, updateCashReport } = require("../services/order");
+const {
+  updateStockReport,
+  updateCashReport,
+} = require("../controller/order.controller");
 const { queryDocument, postDocument } = require("../mysql");
-const multer = require("../middleWares/multer");
+const multer = require("../middleware/multer");
 const express = require("express");
 const purchaseRouter = express.Router();
 

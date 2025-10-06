@@ -1,5 +1,5 @@
 const { postDocument, queryDocument } = require("../mysql");
-const { updateCashReport } = require("./order");
+const { updateCashReport } = require("./order.controller");
 
 async function addExpenseType(req, res, next) {
   try {

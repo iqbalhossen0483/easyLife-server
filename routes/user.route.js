@@ -9,8 +9,8 @@ const {
   receive_balance,
   decline_balance_transfer,
   recentActivity,
-} = require("../services/user");
-const multer = require("../middleWares/multer");
+} = require("../controller/user.controller");
+const multer = require("../middleware/multer");
 
 const userRouter = express.Router();
 

@@ -1,5 +1,8 @@
 const express = require("express");
-const { postProduction, getProduction } = require("../services/production");
+const {
+  postProduction,
+  getProduction,
+} = require("../controller/production.controller");
 
 const productionRoute = express.Router();
 

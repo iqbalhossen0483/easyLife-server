@@ -1,5 +1,5 @@
 const { postDocument, queryDocument } = require("../mysql");
-const { commisionObserver, handleCommition } = require("./common");
+const { commisionObserver, handleCommition } = require("../services/common");
 let database;
 
 //done;

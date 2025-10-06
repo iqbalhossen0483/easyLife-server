@@ -4,7 +4,7 @@ const {
   getNotes,
   updateNote,
   removeNotes,
-} = require("../services/notes");
+} = require("../controller/notes.controller");
 const notesRouter = express.Router();
 
 notesRouter
