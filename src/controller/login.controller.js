@@ -3,45 +3,39 @@ const jwt = require("jsonwebtoken");
 
 async function login(req, res, next) {
   try {
-    const bdSql = `SELECT * FROM db_list WHERE id = '${req.body.db}'`;
-    const db = await queryDocument(bdSql);
-    if (!db.length) {
+    // check database;
+    const dbSql = `SELECT * FROM db_list WHERE id = '${req.body.db}'`;
+    const [database] = await queryDocument(dbSql);
+    if (!database) {
       throw { message: "There is no authorised user", status: 401 };
     }
 
-    const database = db[0];
+    // check user;
+    const sql = `SELECT * FROM ${database.name}.users WHERE phone = '${req.body.phone}' AND password = '${req.body.password}'`;
+    const [user] = await queryDocument(sql);
+    if (!user) {
+      throw { message: "There is no authorised user", status: 401 };
+    }
+
+    // get database data;
     const primaryUserSql = `SELECT name FROM ${database.name}.users WHERE id = ${database.primary_user}`;
     const primaryUser = await queryDocument(primaryUserSql);
     database.primary_user_name = primaryUser[0]?.name;
-
-    //current user quantity;
-    const currentUserSql = `SELECT id FROM ${database.name}.users`;
-    const currentUser = await queryDocument(currentUserSql);
-    database.current_user = currentUser.length - 1;
-
-    //current product quantity;
-    const currentProductSql = `SELECT id FROM ${database.name}.products`;
-    const currentProduct = await queryDocument(currentProductSql);
-    database.current_product = currentProduct.length - 1;
-
-    //current customer quantity;
-    const currentCustomerSql = `SELECT id FROM ${database.name}.customers`;
-    const currentCustomer = await queryDocument(currentCustomerSql);
-    database.current_customer = currentCustomer.length - 1;
-
-    // check user;
-    const sql = `SELECT * FROM ${database.name}.users WHERE phone = '${req.body.phone}'`;
-    const userdb = await queryDocument(sql);
-    if (!userdb.length) {
+    const combinedSql = `
+      SELECT 
+        (SELECT COUNT(*) FROM \`${database.name}\`.users) AS total_users,
+        (SELECT COUNT(*) FROM \`${database.name}\`.products) AS total_products,
+        (SELECT COUNT(*) FROM \`${database.name}\`.customers) AS total_customers
+    `;
+    const [databaseCount] = await queryDocument(combinedSql);
+    if (!databaseCount) {
       throw { message: "There is no authorised user", status: 401 };
     }
+    database.current_user = databaseCount.total_users;
+    database.current_product = databaseCount.total_products;
+    database.current_customer = databaseCount.total_customers;
 
-    // check user password;
-    const user = userdb[0];
-    if (user.password !== req.body.password) {
-      throw { message: "Username Or Password is Wrong", status: 401 };
-    }
-
+    // get user data;
     // generate token;
     delete user.password;
     const token = jwt.sign({ ...user, database }, process.env.tokenSecret);
