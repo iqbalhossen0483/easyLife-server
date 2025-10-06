@@ -2,6 +2,7 @@ const { sendNotification } = require("./controller/notification.controller");
 const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
+const statusCode = require("./config/statusCode");
 require("dotenv").config();
 const app = express();
 
@@ -19,7 +20,7 @@ app.use((req, res, next) => {
     const database = req.headers.database;
     if (!database) {
       console.log(req.url);
-      next({ message: "Access denied", status: 401 });
+      next({ message: "Access denied", status: statusCode.FORBIDDEN });
     }
     req.query.db = database;
     next();
@@ -44,9 +45,13 @@ app.post("/message", sendNotification);
 //error handler;
 app.use((err, req, res, next) => {
   console.log(err);
-  res
-    .status(err.statusCode || 500)
-    .send({ message: err.message || "Internal server error" });
+
+  const statusCode = err.statusCode || statusCode.SERVER_ERROR;
+  res.status(statusCode).send({
+    message: err.message || "Internal server error",
+    success: false,
+    status: statusCode,
+  });
 });
 
 //app listener;
