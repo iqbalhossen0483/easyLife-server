@@ -1,17 +1,5 @@
 const express = require("express");
 const cors = require("cors");
-const userRouter = require("./routes/user");
-const deshboardRouter = require("./routes/admin");
-const loginRoute = require("./routes/login");
-const customerRoute = require("./routes/customers");
-const notesRouter = require("./routes/notes");
-const productRouter = require("./routes/products");
-const supplierRouter = require("./routes/supplier");
-const purchaseRouter = require("./routes/purchase");
-const orderRouter = require("./routes/order");
-const productionRoute = require("./routes/production");
-const adminRouter = require("./routes/admin");
-const expenseRouter = require("./routes/expense");
 const morgan = require("morgan");
 require("dotenv").config();
 const app = express();
@@ -39,18 +27,18 @@ app.use((req, res, next) => {
 });
 
 //routes
-app.use("/", deshboardRouter);
-app.use("/user", userRouter);
-app.use("/login", loginRoute);
-app.use("/customer", customerRoute);
-app.use("/notes", notesRouter);
-app.use("/product", productRouter);
-app.use("/supplier", supplierRouter);
-app.use("/purchase", purchaseRouter);
-app.use("/order", orderRouter);
-app.use("/admin", adminRouter);
-app.use("/expense", expenseRouter);
-app.use("/production", productionRoute);
+app.use("/", require("./routes/admin"));
+app.use("/user", require("./routes/user"));
+app.use("/login", require("./routes/login"));
+app.use("/customer", require("./routes/customers"));
+app.use("/notes", require("./routes/notes"));
+app.use("/product", require("./routes/products"));
+app.use("/supplier", require("./routes/supplier"));
+app.use("/purchase", require("./routes/purchase"));
+app.use("/order", require("./routes/order"));
+app.use("/admin", require("./routes/admin"));
+app.use("/expense", require("./routes/expense"));
+app.use("/production", require("./routes/production"));
 
 app.post("/message", async (req, res, next) => {
   try {
