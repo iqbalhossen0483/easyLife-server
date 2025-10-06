@@ -1,8 +1,10 @@
 const { sendNotification } = require("./controller/notification.controller");
-const express = require("express");
-const cors = require("cors");
-const morgan = require("morgan");
 const statusCode = require("./config/statusCode");
+const express = require("express");
+const cron = require("node-cron");
+const morgan = require("morgan");
+const cors = require("cors");
+const { cashReportObserver } = require("./services/cashObserver.service");
 require("dotenv").config();
 const app = express();
 
@@ -29,8 +31,8 @@ app.use((req, res, next) => {
 
 //routes
 app.use("/", require("./routes/admin.route"));
-app.use("/user", require("./routes/user.route"));
 app.use("/login", require("./routes/login.route"));
+app.use("/user", require("./routes/user.route"));
 app.use("/customer", require("./routes/customers.route"));
 app.use("/notes", require("./routes/notes.route"));
 app.use("/product", require("./routes/products.route"));
@@ -52,6 +54,11 @@ app.use((err, req, res, next) => {
     success: false,
     status: statusCode,
   });
+});
+
+// cron job
+cron.schedule("59 23 * * *", () => {
+  cashReportObserver();
 });
 
 //app listener;

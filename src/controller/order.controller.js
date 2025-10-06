@@ -1,8 +1,5 @@
 const { postDocument, queryDocument } = require("../services/mysql.service");
-const {
-  commisionObserver,
-  handleCommition,
-} = require("../services/common.service");
+const { commitionOberver } = require("../services/common.service");
 let database;
 
 //done;
@@ -309,11 +306,6 @@ async function completeOrder(req, res, next) {
   }
 }
 
-function addHours(date) {
-  const hoursToAdd = 6 * 60 * 60 * 1000;
-  date.setTime(date.getTime() + hoursToAdd);
-  return date;
-}
 async function updateuserTarget(req, id, totalSale, shopCommission) {
   const targetsql = `SELECT * FROM ${database}.target_commision tc WHERE tc.status = 'running' AND tc.user_id = '${id}'`;
   const target = await queryDocument(targetsql);
@@ -323,14 +315,9 @@ async function updateuserTarget(req, id, totalSale, shopCommission) {
     const sql = `UPDATE ${database}.target_commision SET achiveAmnt = achiveAmnt + ${amunt} WHERE id = '${target[0].id}'`;
     await queryDocument(sql);
 
-    let endDate = new Date(`${target[0].end_date.slice(0, 10)}T23:59:59.000Z`);
-    let currentDate = addHours(new Date());
-    let endTime = endDate.getTime() - currentDate.getTime();
-
     if (target[0].achiveAmnt + amunt >= target[0].targetedAmnt) {
-      await handleCommition(req, target[0].id);
+      await commitionOberver(req, target[0].id);
     }
-    commisionObserver(req, target[0].id, endTime);
   }
 }
 

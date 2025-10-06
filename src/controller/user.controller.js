@@ -1,9 +1,7 @@
 const { postDocument, queryDocument } = require("../services/mysql.service");
-const {
-  deleteImage,
-  commisionObserver,
-} = require("../services/common.service");
+const { deleteImage } = require("../services/common.service");
 const { addReport } = require("./expense.controller");
+const statusCode = require("../config/statusCode");
 
 async function getUser(req, res, next) {
   try {
@@ -94,29 +92,28 @@ async function deleteUser(req, res, next) {
   }
 }
 
-function addHours(date) {
-  const hoursToAdd = 6 * 60 * 60 * 1000;
-  date.setTime(date.getTime() + hoursToAdd);
-  return date;
-}
 async function addATargetForUser(req, res, next) {
   try {
     const data = req.body;
 
-    let endDate = new Date(`${data.end_date.slice(0, 10)}T23:59:59.000Z`);
+    let endDate = new Date(data.end_date);
+    endDate.setUTCHours(23, 59, 59);
     const sql = `INSERT INTO ${req.query.db}.target_commision SET `;
     data.end_date = JSON.parse(JSON.stringify(endDate));
 
     const target = await postDocument(sql, data);
 
-    data.end_date = JSON.parse(JSON.stringify(endDate));
-    if (target.insertId) {
-      let currentDate = addHours(new Date());
-      let endTime = endDate.getTime() - currentDate.getTime();
-
-      commisionObserver(req, target.insertId, endTime);
-      res.send({ message: "Target added successfully" });
-    } else throw { message: "Could not insert" };
+    if (!target.insertId) {
+      throw {
+        message: "Could not insert, Try again.",
+        status: statusCode.UNPROCESSABLE_ENTITY,
+      };
+    }
+    res.send({
+      message: "Target added successfully",
+      status: statusCode.SUCCESS,
+      success: true,
+    });
   } catch (error) {
     next(error);
     console.log(error);
