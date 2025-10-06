@@ -1,5 +1,5 @@
 const fs = require("fs");
-const { queryDocument, postDocument } = require("../mysql");
+const { queryDocument, postDocument } = require("./mysql.service");
 
 async function deleteImage(fileName) {
   try {

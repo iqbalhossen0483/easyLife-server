@@ -1,4 +1,4 @@
-const { queryDocument, postDocument } = require("../mysql");
+const { queryDocument, postDocument } = require("../services/mysql.service");
 
 async function getData(req, res, next) {
   if (req.query.cashReport) {

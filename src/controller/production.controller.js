@@ -1,4 +1,4 @@
-const { queryDocument, postDocument } = require("../mysql");
+const { queryDocument, postDocument } = require("../services/mysql.service");
 const { updateStockReport } = require("./order.controller");
 
 async function postProduction(req, res, next) {

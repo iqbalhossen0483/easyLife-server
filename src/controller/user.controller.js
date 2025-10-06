@@ -1,5 +1,8 @@
-const { postDocument, queryDocument } = require("../mysql");
-const { deleteImage, commisionObserver } = require("../services/common");
+const { postDocument, queryDocument } = require("../services/mysql.service");
+const {
+  deleteImage,
+  commisionObserver,
+} = require("../services/common.service");
 const { addReport } = require("./expense.controller");
 
 async function getUser(req, res, next) {

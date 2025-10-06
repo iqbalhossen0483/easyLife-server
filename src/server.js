@@ -4,7 +4,7 @@ const morgan = require("morgan");
 require("dotenv").config();
 const app = express();
 const { Expo } = require("expo-server-sdk");
-const { queryDocument } = require("./mysql");
+const { queryDocument } = require("./services/mysql.service");
 const port = process.env.PORT || 5000;
 app.use(morgan("dev"));
 

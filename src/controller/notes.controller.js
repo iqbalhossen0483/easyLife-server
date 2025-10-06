@@ -1,4 +1,4 @@
-const { postDocument, queryDocument } = require("../mysql");
+const { postDocument, queryDocument } = require("../services/mysql.service");
 
 async function postNotes(req, res, next) {
   try {
