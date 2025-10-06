@@ -44,7 +44,9 @@ app.post("/message", sendNotification);
 //error handler;
 app.use((err, req, res, next) => {
   console.log(err);
-  res.status(err.statusCode || 500).send({ message: "Internal server error" });
+  res
+    .status(err.statusCode || 500)
+    .send({ message: err.message || "Internal server error" });
 });
 
 //app listener;
