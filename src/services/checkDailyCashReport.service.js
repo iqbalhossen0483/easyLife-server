@@ -130,7 +130,7 @@ async function checkDayilyCashReport() {
 
     // Stop the global loop if all is good
     if (!anyUpdate) {
-      console.log("All reports validated successfully. No mismatches found.");
+      console.log(`🎉 Successfully validated ${row}`);
       break;
     }
   }

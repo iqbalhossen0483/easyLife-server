@@ -5,13 +5,12 @@ const cron = require("node-cron");
 const morgan = require("morgan");
 const cors = require("cors");
 const { cashReportObserver } = require("./services/cashObserver.service");
-const { queryDocument, postDocument } = require("./services/mysql.service");
-const {
-  checkDayilyCashReport,
-} = require("./services/checkDailyCashReport.service");
 const {
   checkMonthlyCashReport,
 } = require("./services/checkMonthlyCashReport.service");
+const {
+  checkDayilyCashReport,
+} = require("./services/checkDailyCashReport.service");
 require("dotenv").config();
 const app = express();
 
@@ -55,11 +54,11 @@ app.post("/message", sendNotification);
 app.use((err, req, res, next) => {
   console.log(err);
 
-  const statusCode = err.statusCode || statusCode.SERVER_ERROR;
-  res.status(statusCode).send({
+  const status = err.statusCode || statusCode.SERVER_ERROR;
+  res.status(status).send({
     message: err.message || "Internal server error",
     success: false,
-    status: statusCode,
+    status: status,
   });
 });
 
@@ -68,7 +67,7 @@ cron.schedule("59 23 * * *", () => {
   cashReportObserver();
 });
 
-// checkDayilyCashReport();
+checkDayilyCashReport();
 checkMonthlyCashReport();
 
 //app listener;
