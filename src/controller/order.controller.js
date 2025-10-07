@@ -2,7 +2,6 @@ const { postDocument, queryDocument } = require("../services/mysql.service");
 const { commitionOberver } = require("../services/common.service");
 let database;
 
-//done;
 async function postOrder(req, res, next) {
   try {
     database = req.query.db;
@@ -25,7 +24,6 @@ async function postOrder(req, res, next) {
   }
 }
 
-//done;
 async function getOrders(req, res, next) {
   try {
     database = req.query.db;
@@ -150,18 +148,17 @@ async function updateOrder(req, res, next) {
   try {
     database = req.query.db;
     if (req.query.editOrder) {
-      await editOrder(req, res, next); //done;
+      await editOrder(req, res, next);
     } else if (req.query.collection) {
-      getCollection(req, res, next); //done;
+      getCollection(req, res, next);
     } else {
-      completeOrder(req, res, next); //done;
+      completeOrder(req, res, next);
     }
   } catch (error) {
     next(error);
   }
 }
 
-//done;
 async function removeOrder(req, res, next) {
   try {
     database = req.query.db;
@@ -176,7 +173,6 @@ async function removeOrder(req, res, next) {
   }
 }
 
-//done;
 async function editOrder(req, res, next) {
   try {
     const products = req.body.products || [];

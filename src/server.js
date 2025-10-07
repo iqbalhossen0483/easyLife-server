@@ -5,6 +5,13 @@ const cron = require("node-cron");
 const morgan = require("morgan");
 const cors = require("cors");
 const { cashReportObserver } = require("./services/cashObserver.service");
+const { queryDocument, postDocument } = require("./services/mysql.service");
+const {
+  checkDayilyCashReport,
+} = require("./services/checkDailyCashReport.service");
+const {
+  checkMonthlyCashReport,
+} = require("./services/checkMonthlyCashReport.service");
 require("dotenv").config();
 const app = express();
 
@@ -60,6 +67,9 @@ app.use((err, req, res, next) => {
 cron.schedule("59 23 * * *", () => {
   cashReportObserver();
 });
+
+// checkDayilyCashReport();
+checkMonthlyCashReport();
 
 //app listener;
 app.listen(port, () => {
