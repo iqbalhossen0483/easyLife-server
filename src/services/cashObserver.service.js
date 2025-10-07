@@ -10,7 +10,6 @@ async function cashReportObserver() {
   for (const db of dbList) {
     for (const row of rows) {
       await handleReport({ row, databaseName: db.name });
-      console.log(db.name, row);
     }
   }
 }

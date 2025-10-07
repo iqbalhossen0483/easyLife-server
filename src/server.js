@@ -68,11 +68,10 @@ app.use((err, req, res, next) => {
 // cron job
 cron.schedule("59 23 * * *", () => {
   cashReportObserver();
+  checkDailyCashReport();
+  checkMonthlyCashReport();
+  checkyearlyCashReport();
 });
-
-checkDailyCashReport();
-checkMonthlyCashReport();
-checkyearlyCashReport();
 
 //app listener;
 app.listen(port, () => {

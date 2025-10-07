@@ -1,5 +1,7 @@
 const { postDocument, queryDocument } = require("../services/mysql.service");
 const { commitionOberver } = require("../services/common.service");
+const statusCode = require("../config/statusCode");
+const { cashReportObserver } = require("../services/cashObserver.service");
 let database;
 
 async function postOrder(req, res, next) {
@@ -18,7 +20,11 @@ async function postOrder(req, res, next) {
       const sql = `INSERT INTO ${database}.orders_products SET `;
       await postDocument(sql, product);
     }
-    res.send({ message: "Added successfully" });
+    res.send({
+      message: "Order created successfully",
+      success: true,
+      status: statusCode.SUCCESS,
+    });
   } catch (error) {
     next(error);
   }
@@ -167,7 +173,11 @@ async function removeOrder(req, res, next) {
     if (!result.affectedRows) throw { message: "Opps! unable to delete" };
     const productSql = `DELETE FROM ${database}.orders_products WHERE orderId = '${req.query.id}'`;
     await queryDocument(productSql);
-    res.send({ message: "Deleted successfully" });
+    res.send({
+      message: "Order deleted successfully",
+      success: true,
+      status: statusCode.SUCCESS,
+    });
   } catch (error) {
     next(error);
   }
@@ -214,10 +224,13 @@ async function completeOrder(req, res, next) {
     const delivered_by = req.body.delivered_by;
     const prevSale = req.body.prevSale === "true" || false;
     req.body.date = dateformatter(new Date());
+
     delete req.body.shopId;
     delete req.body.forShop;
     delete req.body.prevSale;
     req.body.status = "delivered";
+
+    //get products;
     const getproductSql = `SELECT op.productId,op.qty,op.total, p.stock FROM ${database}.orders_products op INNER JOIN ${database}.products p ON p.id = op.productId WHERE op.orderId = '${req.query.id}'`;
     const products = await queryDocument(getproductSql);
 
@@ -242,10 +255,8 @@ async function completeOrder(req, res, next) {
     const date = new Date();
     req.body.totalSale = shopData.totalSale;
 
-    //update daily cash report;
+    //update cash report;
     await updateCashReport(req, "daily_cash_report", req.body, date, prevSale);
-
-    //update monthly cash report;
     await updateCashReport(
       req,
       "monthly_cash_report",
@@ -253,13 +264,15 @@ async function completeOrder(req, res, next) {
       date,
       prevSale
     );
-
-    //update yearly cash report;
     await updateCashReport(req, "yearly_cash_report", req.body, date, prevSale);
 
     //break if previous sale;
     if (prevSale) {
-      return res.send({ message: "Order is completed" });
+      return res.send({
+        message: "Order is completed",
+        success: true,
+        status: statusCode.SUCCESS,
+      });
     }
 
     //product report;
@@ -296,7 +309,11 @@ async function completeOrder(req, res, next) {
       shopData.commission
     );
 
-    res.send({ message: "Order is completed" });
+    res.send({
+      message: "Order is completed",
+      success: true,
+      status: statusCode.SUCCESS,
+    });
   } catch (error) {
     next(error);
   }
@@ -455,8 +472,11 @@ async function updateCashReport(
     isExiststockSql += `WHERE year = '${year}'`;
   } else isExiststockSql += "WHERE DATE(`date`) = CURDATE()";
 
-  const isExist = await queryDocument(isExiststockSql);
-  if (!isExist.length) return;
+  let isExist = await queryDocument(isExiststockSql);
+  if (!isExist.length) {
+    await cashReportObserver();
+    isExist = await queryDocument(isExiststockSql);
+  }
 
   let updateReportSql = `UPDATE ${database}.${row} SET totalSale = totalSale + ${item.totalSale}, dueSale = dueSale + ${due}, expense= expense + ${discount}, marketDue = marketDue + ${due}, closing = closing + ${payment} WHERE id = '${isExist[0].id}'`;
   if (ispurchase)
