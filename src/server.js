@@ -11,6 +11,9 @@ const {
 const {
   checkDailyCashReport,
 } = require("./services/checkDailyCashReport.service");
+const {
+  checkyearlyCashReport,
+} = require("./services/checkyearlyCashReport.service");
 require("dotenv").config();
 const app = express();
 
@@ -69,6 +72,7 @@ cron.schedule("59 23 * * *", () => {
 
 checkDailyCashReport();
 checkMonthlyCashReport();
+checkyearlyCashReport();
 
 //app listener;
 app.listen(port, () => {

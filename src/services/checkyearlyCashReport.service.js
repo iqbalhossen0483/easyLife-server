@@ -2,20 +2,6 @@ const { queryDocument } = require("./mysql.service");
 const { updateMismatchData } = require("./updateMismacthData.service");
 
 async function checkyearlyCashReport() {
-  const monthValue = {
-    January: 1,
-    February: 2,
-    March: 3,
-    April: 4,
-    May: 5,
-    June: 6,
-    July: 7,
-    August: 8,
-    September: 9,
-    October: 10,
-    November: 11,
-    December: 12,
-  };
   const row = "yearly_cash_report";
   const dbList = await queryDocument("SELECT * FROM db_list");
 
@@ -41,34 +27,29 @@ async function checkyearlyCashReport() {
           prevClosing = item.opening;
         }
 
-        // 1. get start and end date
-        const month = monthValue[item.month];
+        // 1. get daily report data between start and end date
         const year = item.year;
-        const startDate = new Date(Date.UTC(year, month - 1, 1));
-        const endDate = new Date(Date.UTC(year, month, 0));
-        endDate.setUTCHours(23, 59, 59);
-        const startUtc = startDate.toISOString().slice(0, 19).replace("T", " ");
-        const endUtc = endDate.toISOString().slice(0, 19).replace("T", " ");
+        const dailySql = `SELECT * FROM ${db.name}.monthly_cash_report WHERE year = ${year} `;
+        const monthlyData = await queryDocument(dailySql);
 
-        // 2. get daily report data between start and end date
-        const dailySql = `SELECT * FROM ${db.name}.daily_cash_report WHERE date >= '${startUtc}' AND date <= '${endUtc}'`;
-        const dailyData = await queryDocument(dailySql);
+        if (!monthlyData.length) continue;
 
-        if (!dailyData.length) continue;
-
-        const totalSale = dailyData.reduce(
+        const totalSale = monthlyData.reduce(
           (acc, cur) => acc + cur.totalSale,
           0
         );
-        const dueSale = dailyData.reduce((acc, cur) => acc + cur.dueSale, 0);
-        const collection = dailyData.reduce(
+        const dueSale = monthlyData.reduce((acc, cur) => acc + cur.dueSale, 0);
+        const collection = monthlyData.reduce(
           (acc, cur) => acc + cur.collection,
           0
         );
-        const expense = dailyData.reduce((acc, cur) => acc + cur.expense, 0);
-        const purchase = dailyData.reduce((acc, cur) => acc + cur.purchase, 0);
+        const expense = monthlyData.reduce((acc, cur) => acc + cur.expense, 0);
+        const purchase = monthlyData.reduce(
+          (acc, cur) => acc + cur.purchase,
+          0
+        );
 
-        // 3. check  if any mismatch
+        // 2. check  if any mismatch
         if (prevClosing !== item.opening) {
           await updateMismatchData({
             database: db.name,
