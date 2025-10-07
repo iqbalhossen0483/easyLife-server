@@ -9,7 +9,7 @@ const {
   checkMonthlyCashReport,
 } = require("./services/checkMonthlyCashReport.service");
 const {
-  checkDayilyCashReport,
+  checkDailyCashReport,
 } = require("./services/checkDailyCashReport.service");
 require("dotenv").config();
 const app = express();
@@ -67,7 +67,7 @@ cron.schedule("59 23 * * *", () => {
   cashReportObserver();
 });
 
-checkDayilyCashReport();
+checkDailyCashReport();
 checkMonthlyCashReport();
 
 //app listener;

@@ -1,7 +1,7 @@
 const { queryDocument } = require("./mysql.service");
 const { updateMismatchData } = require("./updateMismacthData.service");
 
-async function checkMonthlyCashReport() {
+async function checkyearlyCashReport() {
   const monthValue = {
     January: 1,
     February: 2,
@@ -16,7 +16,7 @@ async function checkMonthlyCashReport() {
     November: 11,
     December: 12,
   };
-  const row = "monthly_cash_report";
+  const row = "yearly_cash_report";
   const dbList = await queryDocument("SELECT * FROM db_list");
 
   for (const db of dbList) {
@@ -183,4 +183,4 @@ async function checkMonthlyCashReport() {
   }
 }
 
-module.exports = { checkMonthlyCashReport };
+module.exports = { checkyearlyCashReport };
