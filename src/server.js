@@ -79,9 +79,12 @@ app.get("/validate-report", async (req, res) => {
   await checkDailyCashReport();
   await checkMonthlyCashReport();
   await checkyearlyCashReport();
+  const dueReport = await checkOrderReport();
   res.json({
     message: "Validation completed",
     status: 200,
+    success: true,
+    dueReport,
   });
 });
 
@@ -101,6 +104,57 @@ async function checkCustomerDue() {
 }
 
 // checkCustomerDue();
+
+async function checkOrderReport() {
+  const dbList = await queryDocument("SELECT * FROM db_list");
+  if (!dbList.length) return console.log("No database found");
+
+  for (const db of dbList) {
+    // retrive order report;
+    const sql = `
+  SELECT 
+    o.*,
+    JSON_ARRAYAGG(
+      JSON_OBJECT(
+        'id', c.id,
+        'amount', c.amount,
+        'orderId', c.orderId,
+        'receiverId', c.receiverId,
+        'date', c.date
+      )
+    ) AS collections
+  FROM ${db.name}.orders o
+  LEFT JOIN ${db.name}.collections c
+    ON o.id = c.orderId
+  GROUP BY o.id
+`;
+
+    const data = await queryDocument(sql);
+    if (!data.length) return console.log("No data found");
+    const parsedData = data.map((item) => {
+      return { ...item, collections: JSON.parse(item.collections) };
+    });
+    let totalDue = 0;
+    const dueReport = [];
+
+    for (const order of parsedData) {
+      totalDue += order.due;
+      if (order.due > 0 || order.collections[0].id) {
+        dueReport.push({
+          totalSale: order.totalSale,
+          dueSale: order.collections.reduce((acc, cur) => acc + cur.amount, 0),
+          payment: order.payment,
+          currentDue: order.due,
+          date: order.date,
+        });
+      }
+    }
+    return {
+      totalDue: totalDue,
+      dueReport: dueReport,
+    };
+  }
+}
 
 //app listener;
 app.listen(port, () => {
