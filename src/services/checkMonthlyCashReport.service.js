@@ -87,6 +87,7 @@ async function checkMonthlyCashReport() {
           item.collection -
           item.expense -
           item.purchase;
+
         if (expectedClosing !== item.closing) {
           await updateMismatchData({
             database: db.name,

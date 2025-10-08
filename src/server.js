@@ -14,6 +14,10 @@ const {
 const {
   checkyearlyCashReport,
 } = require("./services/checkyearlyCashReport.service");
+const { queryDocument } = require("./services/mysql.service");
+const {
+  checkDulicateCashReport,
+} = require("./services/checkDuplicateEntry.service");
 require("dotenv").config();
 const app = express();
 
@@ -25,7 +29,7 @@ app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.static("public"));
 app.use((req, res, next) => {
-  if (/\.jpg|\.png|\.jpeg/.test(req.url)) {
+  if (/\.jpg|\.png|\.jpeg|validate-report/.test(req.url)) {
     next();
   } else {
     const database = req.headers.database;
@@ -68,10 +72,35 @@ app.use((err, req, res, next) => {
 // cron job
 cron.schedule("59 23 * * *", () => {
   cashReportObserver();
-  checkDailyCashReport();
-  checkMonthlyCashReport();
-  checkyearlyCashReport();
 });
+
+app.get("/validate-report", async (req, res) => {
+  await checkDulicateCashReport();
+  await checkDailyCashReport();
+  await checkMonthlyCashReport();
+  await checkyearlyCashReport();
+  res.json({
+    message: "Validation completed",
+    status: 200,
+  });
+});
+
+async function checkCustomerDue() {
+  const dbList = await queryDocument("SELECT * FROM db_list");
+  if (!dbList.length) return;
+
+  for (const db of dbList) {
+    let totalDue = 0;
+    const sql = `SELECT * FROM ${db.name}.customers WHERE due > 0`;
+    const data = await queryDocument(sql);
+    for (const customer of data) {
+      totalDue += customer.due;
+    }
+    console.log(totalDue);
+  }
+}
+
+// checkCustomerDue();
 
 //app listener;
 app.listen(port, () => {
