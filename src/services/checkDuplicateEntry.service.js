@@ -34,4 +34,4 @@ async function checkDulicateCashReport() {
   }
 }
 
-module.exports = { checkDulicateCashReport };
+module.exports = checkDulicateCashReport;

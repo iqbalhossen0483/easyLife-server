@@ -50,4 +50,4 @@ async function handleReport({ row, databaseName }) {
   }
 }
 
-module.exports = { cashReportObserver };
+module.exports = cashReportObserver;

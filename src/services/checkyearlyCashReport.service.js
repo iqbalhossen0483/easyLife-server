@@ -164,4 +164,4 @@ async function checkyearlyCashReport() {
   }
 }
 
-module.exports = { checkyearlyCashReport };
+module.exports = checkyearlyCashReport;

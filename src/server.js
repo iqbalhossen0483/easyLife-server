@@ -4,20 +4,13 @@ const express = require("express");
 const cron = require("node-cron");
 const morgan = require("morgan");
 const cors = require("cors");
-const { cashReportObserver } = require("./services/cashObserver.service");
-const {
-  checkMonthlyCashReport,
-} = require("./services/checkMonthlyCashReport.service");
-const {
-  checkDailyCashReport,
-} = require("./services/checkDailyCashReport.service");
-const {
-  checkyearlyCashReport,
-} = require("./services/checkyearlyCashReport.service");
+const cashReportObserver = require("./services/cashObserver.service");
+const checkMonthlyCashReport = require("./services/checkMonthlyCashReport.service");
+const checkDailyCashReport = require("./services/checkDailyCashReport.service");
+const checkyearlyCashReport = require("./services/checkyearlyCashReport.service");
 const { queryDocument } = require("./services/mysql.service");
-const {
-  checkDulicateCashReport,
-} = require("./services/checkDuplicateEntry.service");
+const checkDulicateCashReport = require("./services/checkDuplicateEntry.service");
+const checkOrderReport = require("./services/checkOrderReport.service");
 require("dotenv").config();
 const app = express();
 
@@ -57,35 +50,50 @@ app.use("/expense", require("./routes/expense.route"));
 app.use("/production", require("./routes/production.route"));
 app.post("/message", sendNotification);
 
-//error handler;
-app.use((err, req, res, next) => {
-  console.log(err);
+app.get("/validate-report", async (req, res, next) => {
+  try {
+    // set header for sse;
+    res.setHeader("Content-Type", "text/event-stream");
+    res.setHeader("Cache-Control", "no-cache");
+    res.setHeader("Connection", "keep-alive");
 
-  const status = err.statusCode || statusCode.SERVER_ERROR;
-  res.status(status).send({
-    message: err.message || "Internal server error",
-    success: false,
-    status: status,
-  });
-});
+    // check cash report
+    res.write("Checking cash report... \n");
+    await cashReportObserver();
+    res.write("Checking cash report completed \n \n");
 
-// cron job
-cron.schedule("59 23 * * *", () => {
-  cashReportObserver();
-});
+    // check cash report
+    res.write("Checking Duplicate cash report... \n");
+    await checkDulicateCashReport();
+    res.write("Checking Duplicate cash report completed \n \n");
 
-app.get("/validate-report", async (req, res) => {
-  await checkDulicateCashReport();
-  await checkDailyCashReport();
-  await checkMonthlyCashReport();
-  await checkyearlyCashReport();
-  const dueReport = await checkOrderReport();
-  res.json({
-    message: "Validation completed",
-    status: 200,
-    success: true,
-    dueReport,
-  });
+    // check cash report
+    res.write("Checking daily cash report... \n");
+    await checkDailyCashReport();
+    res.write("Checking daily cash report completed \n \n");
+
+    // check cash report
+    res.write("Checking monthly cash report... \n");
+    await checkMonthlyCashReport();
+    res.write("Checking monthly cash report completed \n \n");
+
+    // check cash report
+    res.write("Checking yearly cash report... \n");
+    await checkyearlyCashReport();
+    res.write("Checking yearly cash report completed \n \n");
+
+    // check order report
+    res.write("Checking order report... \n");
+    await checkOrderReport();
+    res.write("Checking order report completed \n \n");
+
+    res.write("Report validation completed. Please check your database");
+    res.end();
+  } catch (error) {
+    console.log(error);
+    res.write(`Report validation failed. error: ${error.message}`);
+    res.end();
+  }
 });
 
 async function checkCustomerDue() {
@@ -105,56 +113,22 @@ async function checkCustomerDue() {
 
 // checkCustomerDue();
 
-async function checkOrderReport() {
-  const dbList = await queryDocument("SELECT * FROM db_list");
-  if (!dbList.length) return console.log("No database found");
+// cron job
+cron.schedule("59 23 * * *", () => {
+  cashReportObserver();
+});
 
-  for (const db of dbList) {
-    // retrive order report;
-    const sql = `
-  SELECT 
-    o.*,
-    JSON_ARRAYAGG(
-      JSON_OBJECT(
-        'id', c.id,
-        'amount', c.amount,
-        'orderId', c.orderId,
-        'receiverId', c.receiverId,
-        'date', c.date
-      )
-    ) AS collections
-  FROM ${db.name}.orders o
-  LEFT JOIN ${db.name}.collections c
-    ON o.id = c.orderId
-  GROUP BY o.id
-`;
+//error handler;
+app.use((err, req, res, next) => {
+  console.log(err);
 
-    const data = await queryDocument(sql);
-    if (!data.length) return console.log("No data found");
-    const parsedData = data.map((item) => {
-      return { ...item, collections: JSON.parse(item.collections) };
-    });
-    let totalDue = 0;
-    const dueReport = [];
-
-    for (const order of parsedData) {
-      totalDue += order.due;
-      if (order.due > 0 || order.collections[0].id) {
-        dueReport.push({
-          totalSale: order.totalSale,
-          dueSale: order.collections.reduce((acc, cur) => acc + cur.amount, 0),
-          payment: order.payment,
-          currentDue: order.due,
-          date: order.date,
-        });
-      }
-    }
-    return {
-      totalDue: totalDue,
-      dueReport: dueReport,
-    };
-  }
-}
+  const status = err.statusCode || statusCode.SERVER_ERROR;
+  res.status(status).send({
+    message: err.message || "Internal server error",
+    success: false,
+    status: status,
+  });
+});
 
 //app listener;
 app.listen(port, () => {

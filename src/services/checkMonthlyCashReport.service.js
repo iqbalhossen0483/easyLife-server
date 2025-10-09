@@ -184,4 +184,4 @@ async function checkMonthlyCashReport() {
   }
 }
 
-module.exports = { checkMonthlyCashReport };
+module.exports = checkMonthlyCashReport;

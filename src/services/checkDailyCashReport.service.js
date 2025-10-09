@@ -97,4 +97,4 @@ async function checkDailyCashReport() {
   }
 }
 
-module.exports = { checkDailyCashReport };
+module.exports = checkDailyCashReport;
