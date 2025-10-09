@@ -59,7 +59,7 @@ app.get("/validate-report", async (req, res, next) => {
 
     // check cash report
     res.write("Checking cash report... \n");
-    await cashReportObserver();
+    await cashReportObserver(res);
     res.write("Checking cash report completed \n \n");
 
     // check cash report
@@ -84,7 +84,7 @@ app.get("/validate-report", async (req, res, next) => {
 
     // check order report
     res.write("Checking order report... \n");
-    await checkOrderReport();
+    await checkOrderReport(res);
     res.write("Checking order report completed \n \n");
 
     res.write("Report validation completed. Please check your database");
@@ -95,23 +95,6 @@ app.get("/validate-report", async (req, res, next) => {
     res.end();
   }
 });
-
-async function checkCustomerDue() {
-  const dbList = await queryDocument("SELECT * FROM db_list");
-  if (!dbList.length) return;
-
-  for (const db of dbList) {
-    let totalDue = 0;
-    const sql = `SELECT * FROM ${db.name}.customers WHERE due > 0`;
-    const data = await queryDocument(sql);
-    for (const customer of data) {
-      totalDue += customer.due;
-    }
-    console.log(totalDue);
-  }
-}
-
-// checkCustomerDue();
 
 // cron job
 cron.schedule("59 23 * * *", () => {

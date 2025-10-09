@@ -1,8 +1,17 @@
 const { queryDocument } = require("./mysql.service");
 
-async function checkOrderReport() {
+async function checkCustomerDue(databaseName) {
+  let totalDue = 0;
+  const sql = `SELECT * FROM ${databaseName}.customers WHERE due > 0`;
+  const data = await queryDocument(sql);
+  for (const customer of data) {
+    totalDue += customer.due;
+  }
+  return totalDue;
+}
+
+async function checkOrderReport(res) {
   const dbList = await queryDocument("SELECT * FROM db_list");
-  if (!dbList.length) return console.log("No database found");
 
   for (const db of dbList) {
     const sql = `
@@ -26,7 +35,8 @@ async function checkOrderReport() {
     `;
 
     const data = await queryDocument(sql);
-    if (!data.length) return console.log("No data found");
+    if (!data.length) return res.write(`No order found in ${db.name} \n`);
+
     const parsedData = data.map((item) => {
       return { ...item, collections: JSON.parse(item.collections) };
     });
@@ -57,8 +67,25 @@ async function checkOrderReport() {
       if (report.shouldUpdate) {
         const sql = `UPDATE ${db.name}.orders SET collection = ${report.collection}, dueSale = ${report.dueSale} WHERE id = ${report.id}`;
         await queryDocument(sql);
-        console.log("updated " + report.id);
+        res.write(`Updated ${db.name} order ${report.id} \n`);
       }
+    }
+
+    const customerDue = await checkCustomerDue(db.name);
+    if (customerDue !== totalDue) {
+      res.write(
+        `Total customer due not equal to total order due in ${db.name} \n
+        Total customer due: ${customerDue}
+        \n Total order due: ${totalDue}
+        \n`
+      );
+    } else {
+      res.write(
+        `Total customer due equal to total order due in ${db.name} \n
+        Total customer due: ${customerDue}
+        \n Total order due: ${totalDue} 
+        \n`
+      );
     }
   }
 }
