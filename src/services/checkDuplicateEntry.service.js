@@ -4,7 +4,17 @@ async function checkDulicateCashReport() {
   const dbList = await queryDocument("SELECT * FROM db_list");
 
   for (const db of dbList) {
-    const sql = `SELECT * FROM ${db.name}.daily_cash_report WHERE DATE(date) IN (SELECT DATE(date) FROM ${db.name}.daily_cash_report GROUP BY DATE(date) HAVING COUNT(*) > 1) ORDER BY DATE(date)`;
+    const sql = `
+    SELECT r.*
+    FROM ${db.name}.daily_cash_report AS r
+    JOIN (
+      SELECT DATE(date) AS report_date
+      FROM ${db.name}.daily_cash_report
+      GROUP BY DATE(date)
+      HAVING COUNT(*) > 1
+    ) AS dup ON DATE(r.date) = dup.report_date
+    ORDER BY r.date
+    `;
     const data = await queryDocument(sql);
     if (!data.length) {
       console.log("No duplicate found");

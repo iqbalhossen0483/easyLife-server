@@ -5,7 +5,7 @@ async function mySql() {
     host: "localhost",
     user: "iqbal",
     database: "switchcafebd_controller",
-    password: "60483",
+    password: "Iqbal@60483",
     connectionLimit: 10,
     waitForConnections: true,
     dateStrings: true,

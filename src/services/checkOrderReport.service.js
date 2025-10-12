@@ -1,4 +1,5 @@
 const { queryDocument } = require("./mysql.service");
+const { updateMismatchData } = require("./updateMismacthData.service");
 
 async function checkCustomerDue(databaseName) {
   let totalDue = 0;
@@ -8,6 +9,24 @@ async function checkCustomerDue(databaseName) {
     totalDue += customer.due;
   }
   return totalDue;
+}
+
+async function checkSalesFromDailyReport(databaseName) {
+  let totalSale = 0;
+  let dueSale = 0;
+  let collection = 0;
+  const sql = `SELECT * FROM ${databaseName}.daily_cash_report`;
+  const data = await queryDocument(sql);
+  for (const report of data) {
+    totalSale += report.totalSale;
+    dueSale += report.dueSale;
+    collection += report.collection;
+  }
+  return {
+    totalSale,
+    dueSale,
+    collection,
+  };
 }
 
 async function checkOrderReport(res) {
@@ -40,53 +59,64 @@ async function checkOrderReport(res) {
       continue;
     }
 
-    const parsedData = data.map((item) => {
-      return { ...item, collections: JSON.parse(item.collections) };
-    });
     let totalDue = 0;
-    const dueReport = [];
+    let totalSale = 0;
+    let collection = 0;
+    let dueSale = 0;
 
-    for (const order of parsedData) {
+    for (const order of data) {
       totalDue += order.due;
+      totalSale += order.totalSale;
+      collection += order.collection;
+      dueSale += order.dueSale;
       if (order.due > 0 || order.collections[0].id) {
         const collection = order.collections.reduce(
           (acc, cur) => acc + cur.amount,
           0
         );
-        dueReport.push({
-          id: order.id,
-          totalSale: order.totalSale,
-          dueSale: order.due + collection,
-          collection: collection,
-          payment: order.payment,
-          currentDue: order.due,
-          date: order.date,
-          shouldUpdate: collection !== order.collection,
-        });
-      }
-    }
-
-    for (const report of dueReport) {
-      if (report.shouldUpdate) {
-        const sql = `UPDATE ${db.name}.orders SET collection = ${report.collection}, dueSale = ${report.dueSale} WHERE id = ${report.id}`;
-        await queryDocument(sql);
-        res.write(`Updated ${db.name} order ${report.id} \n`);
+        if (order.due + collection !== order.dueSale) {
+          await updateMismatchData({
+            database: db.name,
+            row: "orders",
+            feildId: order.id,
+            data: {
+              dueSale: order.due + collection,
+            },
+          });
+        }
+        if (order.collection !== collection) {
+          await updateMismatchData({
+            database: db.name,
+            row: "orders",
+            feildId: order.id,
+            data: {
+              collection: collection,
+            },
+          });
+        }
       }
     }
 
     const customerDue = await checkCustomerDue(db.name);
+    const sales = await checkSalesFromDailyReport(db.name);
     if (customerDue !== totalDue) {
       res.write(
         `Total customer due not equal to total order due in ${db.name} \n
-        Total customer due: ${customerDue}
-        \n Total order due: ${totalDue}
+        Total customer due: ${customerDue} \n
+        Total order due: ${totalDue} \n \n
         \n`
       );
     } else {
       res.write(
-        `Total customer due equal to total order due in ${db.name} \n
-        Total customer due: ${customerDue}
-        \n Total order due: ${totalDue} 
+        `Total customer due not equal to total order due in ${db.name} \n
+        Total customer due: ${customerDue} \n
+        Total order due: ${totalDue} \n \n
+        Total sale (order): ${totalSale} \n
+        Total sale (daily report): ${sales.totalSale} \n \n
+        Total due sale (order): ${dueSale} \n
+        Total due sale (daily report): ${sales.dueSale} \n \n
+        Total collection (order): ${collection} \n
+        Total collection (daily report): ${sales.collection}
         \n`
       );
     }
