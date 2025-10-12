@@ -2,10 +2,11 @@ const { postDocument } = require("./mysql.service");
 
 async function updateMismatchData({ database, row, feildId, data }) {
   try {
+    if (!feildId) throw new Error("feildId is required");
     const sql = `UPDATE ${database}.${row} SET `;
     const condition = `WHERE id = '${feildId}'`;
     await postDocument(sql, data, condition);
-    console.log("successfully updated");
+    console.log("successfully updated " + feildId);
   } catch (error) {
     console.log(error);
   }

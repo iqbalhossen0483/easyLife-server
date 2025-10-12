@@ -2,12 +2,14 @@ const { queryDocument } = require("./mysql.service");
 
 async function checkDulicateCashReport() {
   const dbList = await queryDocument("SELECT * FROM db_list");
-  if (!dbList.length) return console.log("No database found");
 
   for (const db of dbList) {
     const sql = `SELECT * FROM ${db.name}.daily_cash_report WHERE DATE(date) IN (SELECT DATE(date) FROM ${db.name}.daily_cash_report GROUP BY DATE(date) HAVING COUNT(*) > 1) ORDER BY DATE(date)`;
     const data = await queryDocument(sql);
-    if (!data.length) return console.log("No duplicate found");
+    if (!data.length) {
+      console.log("No duplicate found");
+      continue;
+    }
 
     // divide into 2 pairs;
     const pairs = [];

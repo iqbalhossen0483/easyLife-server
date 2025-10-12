@@ -35,7 +35,10 @@ async function checkOrderReport(res) {
     `;
 
     const data = await queryDocument(sql);
-    if (!data.length) return res.write(`No order found in ${db.name} \n`);
+    if (!data.length) {
+      res.write(`No order found in ${db.name} \n`);
+      continue;
+    }
 
     const parsedData = data.map((item) => {
       return { ...item, collections: JSON.parse(item.collections) };
