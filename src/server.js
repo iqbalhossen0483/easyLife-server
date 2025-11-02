@@ -9,6 +9,7 @@ const checkMonthlyCashReport = require("./services/checkMonthlyCashReport.servic
 const checkDailyCashReport = require("./services/checkDailyCashReport.service");
 const checkyearlyCashReport = require("./services/checkyearlyCashReport.service");
 const checkDulicateCashReport = require("./services/checkDuplicateEntry.service");
+const { commisionObserver } = require("./services/commisionObserver.service");
 require("dotenv").config();
 const app = express();
 
@@ -57,8 +58,13 @@ app.get("/validate-report", async (req, res, next) => {
 
     // check cash report
     res.write("Checking cash report... \n");
-    await cashReportObserver(res);
+    await cashReportObserver();
     res.write("Checking cash report completed \n \n");
+
+    // check commision report
+    res.write("Checking commision report... \n");
+    await commisionObserver();
+    res.write("Checking commision report completed \n \n");
 
     // check cash report
     res.write("Checking Duplicate cash report... \n");
@@ -92,6 +98,7 @@ app.get("/validate-report", async (req, res, next) => {
 // cron job
 cron.schedule("59 23 * * *", () => {
   cashReportObserver();
+  commisionObserver();
 });
 1;
 //error handler;

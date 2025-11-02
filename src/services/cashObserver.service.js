@@ -1,6 +1,6 @@
 const { queryDocument } = require("./mysql.service");
 
-async function cashReportObserver(res) {
+async function cashReportObserver() {
   const rows = [
     "daily_cash_report",
     "monthly_cash_report",
@@ -9,14 +9,12 @@ async function cashReportObserver(res) {
   const dbList = await queryDocument("SELECT * FROM db_list");
   for (const db of dbList) {
     for (const row of rows) {
-      res.write(`Checking ${db.name}.${row}... \n`);
-      await handleReport({ row, databaseName: db.name, res });
-      res.write(`Checking ${db.name}.${row} completed \n \n`);
+      await handleReport({ row, databaseName: db.name });
     }
   }
 }
 
-async function handleReport({ row, databaseName, res }) {
+async function handleReport({ row, databaseName }) {
   const date = new Date();
   const month = date.toLocaleString("en-us", { month: "long" });
   const year = date.getFullYear();
@@ -30,15 +28,7 @@ async function handleReport({ row, databaseName, res }) {
 
   const isExist = await queryDocument(isExiststockSql);
 
-  res.write(
-    `Already exist ${databaseName} ${row} for date: ${date}, month: ${month}, year: ${year} \n`
-  );
-
   if (isExist.length) return;
-
-  res.write(
-    `Creating ${databaseName} ${row} for date: ${date}, month: ${month}, year: ${year} \n`
-  );
 
   let prevSql = `SELECT report.closing, report.marketDue FROM ${databaseName}.${row} report ORDER BY report.id DESC LIMIT 1`;
   const [prevData] = await queryDocument(prevSql);
@@ -58,10 +48,6 @@ async function handleReport({ row, databaseName, res }) {
     } else if (row === "yearly_cash_report") newSql += ` ,year = ${year}`;
     await queryDocument(newSql);
   }
-
-  res.write(
-    `Created ${databaseName} ${row} for date: ${date}, month: ${month}, year: ${year} \n`
-  );
 }
 
 module.exports = cashReportObserver;

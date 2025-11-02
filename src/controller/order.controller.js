@@ -1,5 +1,4 @@
 const { postDocument, queryDocument } = require("../services/mysql.service");
-const { commitionOberver } = require("../services/common.service");
 const statusCode = require("../config/statusCode");
 const { cashReportObserver } = require("../services/cashObserver.service");
 let database;
@@ -327,10 +326,6 @@ async function updateuserTarget(req, id, totalSale, shopCommission) {
     const amunt = (totalSale * (shopCommission / 100)) / 2;
     const sql = `UPDATE ${database}.target_commision SET achiveAmnt = achiveAmnt + ${amunt} WHERE id = '${target[0].id}'`;
     await queryDocument(sql);
-
-    if (target[0].achiveAmnt + amunt >= target[0].targetedAmnt) {
-      await commitionOberver(req, target[0].id);
-    }
   }
 }
 
