@@ -8,11 +8,7 @@ const cashReportObserver = require("./services/cashObserver.service");
 const checkMonthlyCashReport = require("./services/checkMonthlyCashReport.service");
 const checkDailyCashReport = require("./services/checkDailyCashReport.service");
 const checkyearlyCashReport = require("./services/checkyearlyCashReport.service");
-const { queryDocument } = require("./services/mysql.service");
 const checkDulicateCashReport = require("./services/checkDuplicateEntry.service");
-const checkOrderReport = require("./services/checkOrderReport.service");
-const moment = require("moment-timezone");
-const { updateMismatchData } = require("./services/updateMismacthData.service");
 require("dotenv").config();
 const app = express();
 
@@ -84,11 +80,6 @@ app.get("/validate-report", async (req, res, next) => {
     await checkyearlyCashReport();
     res.write("Checking yearly cash report completed \n \n");
 
-    // check order report
-    res.write("Checking order report... \n");
-    await checkOrderReport(res);
-    res.write("Checking order report completed \n \n");
-
     res.write("Report validation completed. Please check your database");
     res.end();
   } catch (error) {
@@ -98,106 +89,11 @@ app.get("/validate-report", async (req, res, next) => {
   }
 });
 
-// check totalSale, dueSale and collection from order table with daily cash report table;
-// async function checkCashReportWithOrderReport() {
-//   const dbList = await queryDocument("SELECT * FROM db_list");
-
-//   for (const db of dbList) {
-//     // retrive data from daily cash report table;
-//     const dailyCashReport = await queryDocument(
-//       `SELECT * FROM ${db.name}.daily_cash_report`
-//     );
-
-//     for (const report of dailyCashReport) {
-//       const startDate = moment.tz(report.date, "Asia/Dhaka").startOf("day");
-//       const endDate = moment.tz(report.date, "Asia/Dhaka").endOf("day");
-
-//       const startUtc = startDate.format("YYYY-MM-DD HH:mm:ss");
-//       const endUtc = endDate.format("YYYY-MM-DD HH:mm:ss");
-
-//       const order = await queryDocument(
-//         `SELECT * FROM ${db.name}.orders WHERE date >= '${startUtc}' AND date <= '${endUtc}'`
-//       );
-//       if (!order.length) {
-//         console.log(`No order found in ${db.name}`);
-//         continue;
-//       }
-
-//       const totalSale = order.reduce((acc, item) => acc + item.totalSale, 0);
-//       const dueSale = order.reduce((acc, item) => acc + item.dueSale, 0);
-//       if (totalSale !== report.totalSale) {
-//         await updateMismatchData({
-//           database: db.name,
-//           row: "daily_cash_report",
-//           feildId: report.id,
-//           data: {
-//             totalSale: totalSale,
-//           },
-//         });
-//       }
-//       if (dueSale !== report.dueSale) {
-//         await updateMismatchData({
-//           database: db.name,
-//           row: "daily_cash_report",
-//           feildId: report.id,
-//           data: {
-//             dueSale: dueSale,
-//           },
-//         });
-//       }
-//     }
-//   }
-// }
-async function checkCashReportWithOrderReport() {
-  const dbList = await queryDocument("SELECT * FROM db_list");
-
-  for (const db of dbList) {
-    // retrive data from daily cash report table;
-    const dailyCashReport = await queryDocument(
-      `SELECT * FROM ${db.name}.daily_cash_report`
-    );
-
-    for (const report of dailyCashReport) {
-      const startDate = moment.tz(report.date, "Asia/Dhaka").startOf("day");
-      const endDate = moment.tz(report.date, "Asia/Dhaka").endOf("day");
-
-      const startUtc = startDate.format("YYYY-MM-DD HH:mm:ss");
-      const endUtc = endDate.format("YYYY-MM-DD HH:mm:ss");
-
-      const collection = await queryDocument(
-        `SELECT * FROM ${db.name}.collections WHERE date >= '${startUtc}' AND date <= '${endUtc}'`
-      );
-      if (!collection.length) {
-        console.log(`No collections found in ${db.name}`);
-        continue;
-      }
-
-      const totalCollection = collection.reduce(
-        (acc, item) => acc + item.amount,
-        0
-      );
-
-      if (totalCollection !== report.collection) {
-        await updateMismatchData({
-          database: db.name,
-          row: "daily_cash_report",
-          feildId: report.id,
-          data: {
-            collection: totalCollection,
-          },
-        });
-      }
-    }
-  }
-}
-
-// checkCashReportWithOrderReport();
-
 // cron job
 cron.schedule("59 23 * * *", () => {
   cashReportObserver();
 });
-
+1;
 //error handler;
 app.use((err, req, res, next) => {
   console.log(err);
