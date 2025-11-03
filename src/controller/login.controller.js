@@ -15,7 +15,7 @@ async function login(req, res, next) {
     }
 
     // check user;
-    const sql = `SELECT * FROM ${database.name}.users WHERE phone = '${req.body.phone}' AND password = '${req.body.password}'`;
+    const sql = `SELECT * FROM ${database.name}.users WHERE phone = '${req.body.phone}' AND password = '${req.body.password}' AND isDeleted = 0`;
     const [user] = await queryDocument(sql);
     if (!user) {
       throw { message: "There is no authorised user", status: 401 };
@@ -68,7 +68,7 @@ async function getProfile(req, res, next) {
       throw { message: "Access denied", status: statusCode.FORBIDDEN };
 
     // check user;
-    const sql = `SELECT * FROM ${databaseName}.users WHERE phone = '${token.phone}'`;
+    const sql = `SELECT * FROM ${databaseName}.users WHERE phone = '${token.phone}' AND isDeleted = 0`;
     const [user] = await queryDocument(sql);
     if (!user)
       throw {

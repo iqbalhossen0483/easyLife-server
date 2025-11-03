@@ -5,39 +5,43 @@ const statusCode = require("../config/statusCode");
 
 async function getUser(req, res, next) {
   try {
-    let sql = `SELECT * FROM ${req.query.db}.users `;
+    let userSql = "";
     if (req.query.id) {
-      sql = `SELECT * FROM ${req.query.db}.users  WHERE id = '${req.query.id}'`;
+      userSql = `SELECT * FROM ${req.query.db}.users  WHERE id = '${req.query.id}'`;
+    } else if (req.query.type) {
+      userSql = `SELECT id, name, 'user' as type FROM ${req.query.db}.users WHERE isDeleted = 0`;
+    } else {
+      userSql = `SELECT * FROM ${req.query.db}.users WHERE isDeleted = 0`;
     }
-    if (req.query.type) {
-      sql = `SELECT id, name, 'user' as type FROM ${req.query.db}.users `;
-    }
-    const result = await queryDocument(sql);
+
+    const users = await queryDocument(userSql);
+
     if (!req.query.type) {
       let i = 0;
-      for (const user of result) {
+      for (const user of users) {
         const sql = `SELECT * FROM ${req.query.db}.target_commision WHERE user_id = ${user.id}`;
         const tc = await queryDocument(sql);
-        result[i].targets = tc;
+        users[i].targets = tc;
         i++;
       }
     }
-    if (req.query.id && result.length) {
-      result[0].money_transactions = {};
+
+    if (req.query.id && users.length) {
+      users[0].money_transactions = {};
       //send commission data pending;
       const sql = `SELECT ac.*, users.name, tc.targetedAmnt FROM ${req.query.db}.pending_commition ac INNER JOIN ${req.query.db}.target_commision tc ON ac.target_commission_id = tc.id INNER JOIN ${req.query.db}.users ON ac.user_id = users.id WHERE ac.user_id = '${req.query.id}'`;
       const commision = await queryDocument(sql);
 
-      result[0].money_transactions.commision = commision[0] || null;
+      users[0].money_transactions.commision = commision[0] || null;
 
       //send transaction pending data;
-      const transactionSql = `SELECT pt.id, pt.*, tu.name as toUsername, fu.name as fromUsername FROM ${req.query.db}.pending_balance_transfer pt LEFT JOIN ${req.query.db}.users tu ON pt.toUser = tu.id LEFT JOIN ${req.query.db}.users fu ON pt.fromUser = fu.id WHERE pt.fromUser = '${result[0].id}' OR pt.toUser = '${result[0].id}'`;
+      const transactionSql = `SELECT pt.id, pt.*, tu.name as toUsername, fu.name as fromUsername FROM ${req.query.db}.pending_balance_transfer pt LEFT JOIN ${req.query.db}.users tu ON pt.toUser = tu.id LEFT JOIN ${req.query.db}.users fu ON pt.fromUser = fu.id WHERE pt.fromUser = '${users[0].id}' OR pt.toUser = '${users[0].id}'`;
       const transaction = await queryDocument(transactionSql);
 
-      result[0].money_transactions.transactions = transaction;
+      users[0].money_transactions.transactions = transaction;
     }
 
-    res.send(result);
+    res.send(users);
   } catch (error) {
     next(error);
   }
@@ -46,7 +50,7 @@ async function getUser(req, res, next) {
 async function postUser(req, res, next) {
   try {
     //check is exist;
-    const existQuery = `SELECT id FROM ${req.query.db}.users WHERE phone = '${req.body.phone}'`;
+    const existQuery = `SELECT id FROM ${req.query.db}.users WHERE phone = '${req.body.phone}' AND isDeleted = 0`;
     const exist = await queryDocument(existQuery);
     if (exist.length) throw { message: "User already exist" };
 
@@ -82,11 +86,11 @@ async function putUser(req, res, next) {
 
 async function deleteUser(req, res, next) {
   try {
-    const sql = `DELETE FROM ${req.query.db}.users WHERE id = '${req.query.id}'`;
+    const sql = `UPDATE ${req.query.db}.users SET isDeleted = 1 WHERE id = '${req.query.id}'`;
     const result = await queryDocument(sql);
     if (!result.affectedRows) throw { message: "Opps! Unable to delete" };
-    if (req.query.profile) deleteImage(req.query.profile);
-    res.send({ message: "Deleted successfully" });
+
+    res.send({ message: "Deleted successfully", success: true });
   } catch (error) {
     next(error);
   }
