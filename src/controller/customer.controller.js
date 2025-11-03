@@ -20,16 +20,24 @@ async function postCustomer(req, res, next) {
 
 async function getCustomers(req, res, next) {
   try {
-    let sql = `SELECT customers.*, users.name as added_by_name FROM ${req.query.db}.customers INNER JOIN ${req.query.db}.users ON users.id = customers.added_by `;
-    if (req.query.opt)
+    let sql = "";
+    if (req.query.opt) {
       sql = `SELECT ${req.query.opt} FROM ${req.query.db}.customers`;
-    if (req.query.id) {
-      const allSql = `SELECT id FROM ${req.query.db}.orders WHERE shopId = '${req.query.id}'`;
-      const page = parseInt(req.query.page || 0);
-      const allOrder = await queryDocument(allSql);
+    } else {
+      sql = `SELECT customers.*, users.name as added_by_name FROM ${req.query.db}.customers INNER JOIN ${req.query.db}.users ON users.id = customers.added_by`;
+    }
 
-      sql += `WHERE customers.id= '${req.query.id}'`;
-      const customers = await queryDocument(sql);
+    if (req.query.id) {
+      const page = parseInt(req.query.page || 0);
+
+      const orderCountSql = `SELECT id FROM ${req.query.db}.orders WHERE shopId = '${req.query.id}'`;
+      const orderCount = await queryDocument(orderCountSql);
+
+      sql += ` WHERE customers.id= '${req.query.id}'`;
+      const customerData = await queryDocument(sql);
+
+      if (!customerData.length) throw { message: "No shop found", status: 404 };
+      const customer = customerData[0];
 
       const orderSql = `SELECT o.*,c.shopName, c.profile, c.address,c.phone FROM ${
         req.query.db
@@ -40,16 +48,17 @@ async function getCustomers(req, res, next) {
       }' ORDER BY o.date DESC LIMIT ${page * 50}, 50`;
       const orders = await queryDocument(orderSql);
 
-      if (customers.length) customers[0].orders = orders;
+      customer.orders = orders;
 
-      res.send({ count: allOrder.length, data: customers[0] });
+      res.send({ success: true, count: orderCount.length, data: customer });
     } else if (req.query.search) {
       const search = req.query.search.trim();
-      sql += ` WHERE shopName LIKE "%${search}%" OR customers.address LIKE "%${search}%" OR machine_model LIKE "%${search}" OR machine_type LIKE "%${search}"`;
+      sql += ` WHERE isDeleted = 0 AND shopName LIKE "%${search}%" OR customers.address LIKE "%${search}%" OR machine_model LIKE "%${search}" OR machine_type LIKE "%${search}"`;
       const customers = await queryDocument(sql);
+
       res.send(customers);
     } else {
-      const allSql = `SELECT id FROM ${req.query.db}.customers`;
+      const allSql = `SELECT id FROM ${req.query.db}.customers WHERE isDeleted = 0`;
       const page = parseInt(req.query.page || 0);
 
       const allCustomer = await queryDocument(allSql);
@@ -58,7 +67,7 @@ async function getCustomers(req, res, next) {
         req.query.db
       }.customers c INNER JOIN ${
         req.query.db
-      }.users ON users.id = c.added_by ORDER BY c.lastOrder DESC LIMIT ${
+      }.users ON users.id = c.added_by WHERE c.isDeleted = 0 ORDER BY c.lastOrder DESC LIMIT ${
         page * 50
       },50`;
       const customers = await queryDocument(sql);
@@ -89,22 +98,10 @@ async function updateCustomer(req, res, next) {
 }
 async function deleteCustomer(req, res, next) {
   try {
-    const sql = `DELETE FROM ${req.query.db}.customers WHERE id = '${req.query.id}'`;
+    // soft delete customer  by setting isDeleted = 1
+    const sql = `UPDATE ${req.query.db}.customers SET isDeleted = 1 WHERE id = '${req.query.id}'`;
     const result = await queryDocument(sql);
     if (!result.affectedRows) throw { message: "Unable to delete customer" };
-    const profile = req.query.profile;
-    if (profile) deleteImage(profile);
-
-    //delete the customer's orders;
-    const orderSql = `SELECT id FROM ${req.query.db}.orders WHERE shopId = '${req.query.id}'`;
-    const orders = await queryDocument(orderSql);
-    for (const order of orders) {
-      const deleteOrderSql = `DELETE FROM ${req.query.db}.orders WHERE id = '${order.id}'`;
-      const result = await queryDocument(deleteOrderSql);
-      if (!result.affectedRows) continue;
-      const deleteProductSql = `DELETE FROM ${req.query.db}.orders_products WHERE orderId = '${order.id}'`;
-      await queryDocument(deleteProductSql);
-    }
 
     res.send({ message: "Deleted successfully" });
   } catch (error) {
