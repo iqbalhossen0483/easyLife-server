@@ -1,7 +1,6 @@
 const { sendNotification } = require("./controller/notification.controller");
 const statusCode = require("./config/statusCode");
 const express = require("express");
-const cron = require("node-cron");
 const morgan = require("morgan");
 const cors = require("cors");
 const cashReportObserver = require("./services/cashObserver.service");
@@ -10,10 +9,12 @@ const checkDailyCashReport = require("./services/checkDailyCashReport.service");
 const checkyearlyCashReport = require("./services/checkyearlyCashReport.service");
 const checkDulicateCashReport = require("./services/checkDuplicateEntry.service");
 const { commisionObserver } = require("./services/commisionObserver.service");
+const scheduleDailyTasks = require("./services/dailyTasks.service");
+const { config } = require("./config/config");
 require("dotenv").config();
 const app = express();
 
-const port = process.env.PORT || 5000;
+const port = config.port || 5000;
 
 //midleware;
 app.use(cors());
@@ -95,12 +96,9 @@ app.get("/validate-report", async (req, res, next) => {
   }
 });
 
-// cron job
-cron.schedule("59 23 * * *", () => {
-  cashReportObserver();
-  commisionObserver();
-});
-1;
+//schedule daily tasks
+scheduleDailyTasks();
+
 //error handler;
 app.use((err, req, res, next) => {
   console.log(err);

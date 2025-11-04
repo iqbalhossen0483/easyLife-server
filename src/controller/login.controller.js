@@ -1,3 +1,4 @@
+const { config } = require("../config/config");
 const statusCode = require("../config/statusCode");
 const { queryDocument } = require("../services/mysql.service");
 const jwt = require("jsonwebtoken");
@@ -45,7 +46,7 @@ async function login(req, res, next) {
     // get user data;
     // generate token;
     delete user.password;
-    const token = jwt.sign({ ...user, database }, process.env.TOKEN_SECRET);
+    const token = jwt.sign({ ...user, database }, config.tokenSecret);
 
     // get target commision of this user;
     const sqlTargetCommision = `SELECT * FROM ${database.name}.target_commision WHERE user_id = ${user.id}`;
@@ -62,7 +63,7 @@ async function login(req, res, next) {
 async function getProfile(req, res, next) {
   try {
     // extract token and check database;
-    const token = jwt.verify(req.query.token, process.env.TOKEN_SECRET);
+    const token = jwt.verify(req.query.token, config.tokenSecret);
     const databaseName = token.database.name;
     if (!databaseName)
       throw { message: "Access denied", status: statusCode.FORBIDDEN };

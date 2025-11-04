@@ -1,7 +1,8 @@
+const { config } = require("../config/config");
 const { postDocument, queryDocument } = require("./mysql.service");
+const moment = require("moment-timezone");
 
 async function commisionObserver() {
-  console.log("hitting");
   const dbList = await queryDocument("SELECT * FROM db_list");
   for (const db of dbList) {
     await handleCommission({ db: db.name });
@@ -9,7 +10,8 @@ async function commisionObserver() {
 }
 
 async function handleCommission({ db }) {
-  const targetSql = `SELECT * FROM ${db}.target_commision WHERE status = 'running'`;
+  const now = moment().tz(config.timeZone).format("YYYY-MM-DD HH:mm:ss");
+  const targetSql = `SELECT * FROM ${db}.target_commision WHERE status = 'running' AND end_date < '${now}'`;
   const targets = await queryDocument(targetSql);
   if (!targets.length) return;
 
