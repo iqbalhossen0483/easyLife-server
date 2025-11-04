@@ -53,7 +53,7 @@ async function getCustomers(req, res, next) {
       res.send({ success: true, count: orderCount.length, data: customer });
     } else if (req.query.search) {
       const search = req.query.search.trim();
-      sql += ` WHERE isDeleted = 0 AND shopName LIKE "%${search}%" OR customers.address LIKE "%${search}%" OR machine_model LIKE "%${search}" OR machine_type LIKE "%${search}"`;
+      sql += ` WHERE customers.isDeleted = 0 AND shopName LIKE "%${search}%" OR customers.address LIKE "%${search}%" OR machine_model LIKE "%${search}" OR machine_type LIKE "%${search}"`;
       const customers = await queryDocument(sql);
 
       res.send(customers);
