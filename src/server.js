@@ -11,7 +11,7 @@ const checkDulicateCashReport = require("./services/checkDuplicateEntry.service"
 const { commisionObserver } = require("./services/commisionObserver.service");
 const scheduleDailyTasks = require("./services/dailyTasks.service");
 const { config } = require("./config/config");
-require("dotenv").config();
+const { redis } = require("./config/redis");
 const app = express();
 
 const port = config.port || 5000;
@@ -113,5 +113,5 @@ app.use((err, req, res, next) => {
 
 //app listener;
 app.listen(port, () => {
-  console.log("its running", port);
+  console.log("Server is running on port", port);
 });
