@@ -2,6 +2,7 @@ const { postDocument, queryDocument } = require("../services/mysql.service");
 const { deleteImage } = require("../services/common.service");
 const { addReport } = require("./expense.controller");
 const statusCode = require("../config/statusCode");
+const moment = require("moment");
 
 async function getUser(req, res, next) {
   try {
@@ -100,10 +101,16 @@ async function addATargetForUser(req, res, next) {
   try {
     const data = req.body;
 
-    let endDate = new Date(data.end_date);
-    endDate.setUTCHours(23, 59, 59);
+    let endDate = moment(data.end_date)
+      .endOf("day")
+      .format("YYYY-MM-DD-HH:mm:ss");
+    let startDate = moment(data.start_date)
+      .startOf("day")
+      .format("YYYY-MM-DD-HH:mm:ss");
+
     const sql = `INSERT INTO ${req.query.db}.target_commision SET `;
-    data.end_date = JSON.parse(JSON.stringify(endDate));
+    data.end_date = endDate;
+    data.start_date = startDate;
 
     const target = await postDocument(sql, data);
 
