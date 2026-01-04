@@ -1,11 +1,13 @@
 const mysql = require("mysql2/promise");
+const { config } = require("../config/config");
 
 async function mySql() {
   const db = await mysql.createConnection({
-    host: "localhost",
-    user: "iqbal",
-    database: "switchcafebd_controller",
-    password: "60483", // Iqbal@0483
+    host: config.database.host,
+    user: config.database.user,
+    database: config.database.database,
+    password: config.database.password,
+    port: config.database.port,
     connectionLimit: 10,
     waitForConnections: true,
     dateStrings: true,

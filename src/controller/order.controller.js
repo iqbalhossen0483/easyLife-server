@@ -1,6 +1,6 @@
 const { postDocument, queryDocument } = require("../services/mysql.service");
 const statusCode = require("../config/statusCode");
-const { cashReportObserver } = require("../services/cashObserver.service");
+const cashReportObserver = require("../services/cashObserver.service");
 let database;
 
 async function postOrder(req, res, next) {
@@ -21,6 +21,7 @@ async function postOrder(req, res, next) {
     }
     res.send({
       message: "Order created successfully",
+      orderId: insertId,
       success: true,
       status: statusCode.SUCCESS,
     });
