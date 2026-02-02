@@ -23,10 +23,13 @@ async function handleCommission({ db }) {
     if (target.achiveAmnt >= target.targetedAmnt) {
       status = "achieved";
       const sql = `INSERT INTO ${db}.pending_commition SET `;
+      const remainingAmnt = target.targetedAmnt - target.achiveAmnt;
+      const commissionAmount = (target.targetedAmnt * target.commission) / 100;
+      const newCommissionAmount = (target.achiveAmnt * target.commission) / 100;
       const payload = {
         user_id: target.user_id,
         target_commission_id: target.id,
-        commission: target.targetedAmnt * (target.commission / 100),
+        commission: remainingAmnt >= 0 ? commissionAmount : newCommissionAmount,
       };
       await postDocument(sql, payload);
     } else status = "failed";

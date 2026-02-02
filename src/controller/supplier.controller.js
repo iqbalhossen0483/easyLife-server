@@ -34,6 +34,14 @@ async function getSupplier(req, res, next) {
       const orders = await queryDocument(ordersSql);
       supplier[0].orders = orders;
       res.send({ count: allOrder.length, data: supplier[0] });
+    } else if (req.query.search) {
+      let sql = `SELECT ${req.query.opt ? req.query.opt : "*"} FROM ${
+        req.query.db
+      }.supplier WHERE name LIKE "%${req.query.search}%" OR phone LIKE "%${
+        req.query.search
+      }%"`;
+      const result = await queryDocument(sql);
+      res.send(result);
     } else {
       let sql = `SELECT * FROM ${req.query.db}.supplier `;
       if (req.query.type) {
