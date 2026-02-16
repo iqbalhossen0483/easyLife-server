@@ -163,12 +163,12 @@ async function receive_balance(req, res, next) {
       req.body.purpose === "Salary"
         ? "get_salary = get_salary"
         : req.body.purpose === "Incentive"
-        ? "incentive = incentive"
-        : req.body.purpose === "Purchase Product"
-        ? "giveAmount = giveAmount"
-        : req.body.purpose === "Debt"
-        ? "debt = debt"
-        : "haveMoney = haveMoney";
+          ? "incentive = incentive"
+          : req.body.purpose === "Purchase Product"
+            ? "giveAmount = giveAmount"
+            : req.body.purpose === "Debt"
+              ? "debt = debt"
+              : "haveMoney = haveMoney";
     const touserDbsql =
       req.body.purpose === "Purchase Product"
         ? `${req.query.db}.supplier`
@@ -282,6 +282,44 @@ async function recentActivity(req, res, next) {
   }
 }
 
+async function userReport(req, res, next) {
+  try {
+    const { user_id, month } = req.body;
+    if (!user_id) throw { message: "User id is required" };
+    if (!month) throw { message: "Month is required" };
+    const firstDayOfMonth = moment(`${month}-01`, "YYYY-MM-DD")
+      .startOf("month")
+      .format("YYYY-MM-DD");
+    const lastDayOfMonth = moment(`${month}-01`, "YYYY-MM-DD")
+      .endOf("month")
+      .format("YYYY-MM-DD");
+    const monthName = new Date(month).toLocaleString("en-bd", {
+      month: "long",
+    });
+    const year = new Date(month).getFullYear();
+    const sql = `SELECT totalSale, due FROM ${req.query.db}.orders WHERE delivered_by = '${user_id}' AND date BETWEEN '${firstDayOfMonth}' AND '${lastDayOfMonth}'`;
+    const data = await queryDocument(sql);
+    const totalSale = data.reduce((acc, curr) => acc + curr.totalSale, 0);
+    const due = data.reduce((acc, curr) => acc + curr.due, 0);
+
+    const userSql = `SELECT name FROM ${req.query.db}.users WHERE id = '${user_id}'`;
+    const user = await queryDocument(userSql);
+    if (!user.length) throw { message: "User not found" };
+
+    res.send({
+      success: true,
+      message: "User report",
+      month: monthName,
+      year,
+      totalSale,
+      due,
+      user: user[0].name,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   getUser,
   postUser,
@@ -292,4 +330,5 @@ module.exports = {
   receive_balance,
   decline_balance_transfer,
   recentActivity,
+  userReport,
 };
