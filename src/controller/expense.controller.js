@@ -3,6 +3,7 @@ const { updateCashReport } = require("./order.controller");
 
 async function addExpenseType(req, res, next) {
   try {
+    delete req.body.id;
     const sql = `INSERT INTO ${req.query.db}.expense_type SET `;
     const result = await postDocument(sql, req.body);
     if (!result.insertId) throw { messase: "Ops! Unable to save" };
@@ -94,7 +95,7 @@ async function addReport(req, data, res, next, updateUser = true) {
       payload,
       date,
       false,
-      true
+      true,
     );
 
     //update monthly cash report;
@@ -104,7 +105,7 @@ async function addReport(req, data, res, next, updateUser = true) {
       payload,
       date,
       false,
-      true
+      true,
     );
 
     //update yearly cash report;
@@ -114,7 +115,7 @@ async function addReport(req, data, res, next, updateUser = true) {
       payload,
       date,
       false,
-      true
+      true,
     );
     res.send({ message: "Expense added successfully" });
   } catch (error) {
