@@ -15,7 +15,7 @@ async function addExpenseType(req, res, next) {
 
 async function getexpenseTypes(req, res, next) {
   try {
-    const sql = `SELECT * FROM ${req.query.db}.expense_type`;
+    const sql = `SELECT * FROM ${req.query.db}.expense_type WHERE isDeleted = 0`;
     const result = await queryDocument(sql);
     res.send(result);
   } catch (error) {
@@ -36,7 +36,7 @@ async function editexpenseType(req, res, next) {
 
 async function deleteexpenseType(req, res, next) {
   try {
-    const sql = `DELETE FROM ${req.query.db}.expense_type WHERE id = '${req.body.id}'`;
+    const sql = `UPDATE ${req.query.db}.expense_type SET isDeleted = 1 WHERE id = '${req.body.id}'`;
     const result = await queryDocument(sql);
     if (!result.affectedRows) throw { messase: "Ops! Unable to delete" };
     res.send({ messase: "Deleted successfully" });
