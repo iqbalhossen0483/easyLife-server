@@ -3,7 +3,11 @@ const { deleteImage } = require("../services/common.service");
 
 async function postSuppier(req, res, next) {
   try {
-    if (req.file) req.body.profile = req.file.filename;
+    if (req.file) {
+      req.body.profile = req.file.filename;
+    } else {
+      delete req.body.profile;
+    }
     const sql = `INSERT INTO ${req.query.db}.supplier SET `;
     const result = await postDocument(sql, req.body);
     if (!result.insertId) throw { message: "Opps! unable to add" };
@@ -39,13 +43,13 @@ async function getSupplier(req, res, next) {
         req.query.db
       }.supplier WHERE name LIKE "%${req.query.search}%" OR phone LIKE "%${
         req.query.search
-      }%"`;
+      }%" AND isDeleted = 0`;
       const result = await queryDocument(sql);
       res.send(result);
     } else {
-      let sql = `SELECT * FROM ${req.query.db}.supplier `;
+      let sql = `SELECT * FROM ${req.query.db}.supplier WHERE isDeleted = 0`;
       if (req.query.type) {
-        sql = `SELECT *, 'supplier' as type FROM ${req.query.db}.supplier `;
+        sql = `SELECT *, 'supplier' as type FROM ${req.query.db}.supplier WHERE isDeleted = 0`;
       }
       const result = await queryDocument(sql);
       res.send(result);
@@ -79,10 +83,9 @@ async function updateSupplier(req, res, next) {
 
 async function deleteSupplier(req, res, next) {
   try {
-    const sql = `DELETE FROM ${req.query.db}.supplier WHERE id = '${req.query.id}'`;
+    const sql = `UPDATE ${req.query.db}.supplier SET isDeleted = 1 WHERE id = '${req.query.id}'`;
     const result = await queryDocument(sql);
     if (!result.affectedRows) throw { message: "Opps! unable to delete" };
-    if (req.query.profile) deleteImage(req.query.profile);
     res.send({ message: "Deleted successfully" });
   } catch (error) {
     next(error);

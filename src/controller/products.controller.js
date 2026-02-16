@@ -21,10 +21,12 @@ async function getProducts(req, res, next) {
       req.query.db
     }.products `;
     if (req.query.search) {
-      sql += ` WHERE name LIKE "%${req.query.search}%"`;
+      sql += ` WHERE name LIKE "%${req.query.search}%" AND isDeleted = 0`;
+    } else {
+      sql += ` WHERE isDeleted = 0`;
     }
-
     sql += " ORDER BY products.sl ASC";
+
     const result = await queryDocument(sql);
     res.send(result);
   } catch (error) {
@@ -54,10 +56,9 @@ async function updateProduct(req, res, next) {
 
 async function deleteProduct(req, res, next) {
   try {
-    const sql = `DELETE FROM ${req.query.db}.products WHERE id = '${req.query.id}'`;
+    const sql = `UPDATE ${req.query.db}.products SET isDeleted = 1 WHERE id = '${req.query.id}'`;
     const result = await queryDocument(sql);
     if (!result.affectedRows) throw { message: "Opps! Unable to delete" };
-    if (req.query.profile) deleteImage(req.query.profile);
     res.send({ message: "Deleted successfully" });
   } catch (error) {
     next(error);
