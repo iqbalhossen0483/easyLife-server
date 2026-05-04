@@ -297,7 +297,7 @@ async function userReport(req, res, next) {
       month: "long",
     });
     const year = new Date(month).getFullYear();
-    const sql = `SELECT totalSale, due FROM ${req.query.db}.orders WHERE delivered_by = '${user_id}' AND date BETWEEN '${firstDayOfMonth}' AND '${lastDayOfMonth}'`;
+    const sql = `SELECT totalSale, due FROM ${req.query.db}.orders WHERE created_by = '${user_id}' AND date BETWEEN '${firstDayOfMonth}' AND '${lastDayOfMonth}'`;
     const data = await queryDocument(sql);
     const totalSale = data.reduce((acc, curr) => acc + curr.totalSale, 0);
     const due = data.reduce((acc, curr) => acc + curr.due, 0);
